@@ -1,7 +1,6 @@
 #pragma once
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <Eigen/Geometry>
 
 #include <opencv2/opencv.hpp>
 
@@ -9,7 +8,6 @@
 
 class DepthToScan {
  public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   DepthToScan(int width, int height, double fx, double fy, double cx, double cy,
               double factor);
   ~DepthToScan() {}
