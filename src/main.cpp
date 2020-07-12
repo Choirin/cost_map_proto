@@ -1,8 +1,10 @@
+#include <cv_bridge/cv_bridge.h>
+#include <image_transport/image_transport.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl_ros/point_cloud.h>
 #include <ros/ros.h>
-#include <sensor_msgs/LaserScan.h>
+#include <sensor_msgs/image_encodings.h>
 #include <tf/transform_listener.h>
 
 #include <cmath>
@@ -11,14 +13,18 @@
 #include <queue>
 
 #include "frame_buffer/scan_frame.hpp"
+#include "depth_to_scan/depth_to_scan.hpp"
 
 class ScanFrameBufferNode {
  protected:
   ros::NodeHandle nh_;
 
-  ros::Subscriber scan_sub_;
+  image_transport::ImageTransport it_;
+  image_transport::Subscriber depth_sub_;
   tf::TransformListener tf_;
   ros::Publisher pub;
+
+  std::unique_ptr<DepthToScan> depth_to_scan_;
 
   std::shared_ptr<std::vector<float>> angles_;
 
@@ -31,23 +37,28 @@ class ScanFrameBufferNode {
 
  public:
   ScanFrameBufferNode()
-      : angles_(std::make_shared<std::vector<float>>()),
+      : it_(nh_),
+        angles_(std::make_shared<std::vector<float>>()),
         frame_size_(20),
         odom_frame_("odom") {
-    scan_sub_ = nh_.subscribe<sensor_msgs::LaserScan>(
-        "/scan", 1, boost::bind(&ScanFrameBufferNode::callback, this, _1));
+    depth_to_scan_ = std::make_unique<DepthToScan>(
+        224, 172,
+        195.26491142934, 195.484689318979,
+        111.31867165296, 86.8194913656314,
+        1000.0);
+    depth_sub_ =
+        it_.subscribe("/depth/image_raw", 1,
+                      boost::bind(&ScanFrameBufferNode::callback, this, _1));
     pub = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("points", 1);
   }
 
-  void callback(const sensor_msgs::LaserScan::ConstPtr &msg) {
-    // calculate angles corresponding to the ranges.
-    if (angles_->size() == 0) {
-      size_t size = msg->ranges.size();
-      angles_->reserve(size);
-      for (size_t i = 0; i < size; ++i) {
-        auto angle = msg->angle_min + i * msg->angle_increment;
-        angles_->push_back(angle);
-      }
+  void callback(const sensor_msgs::ImageConstPtr& msg) {
+    cv_bridge::CvImagePtr cv_ptr;
+    try {
+      cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::TYPE_16UC1);
+    } catch (cv_bridge::Exception& e) {
+      ROS_ERROR("cv_bridge exception: %s", e.what());
+      return;
     }
 
     // obatain translation and rotation.
@@ -55,8 +66,9 @@ class ScanFrameBufferNode {
     double yaw;
     try {
       tf::StampedTransform transform;
-      tf_.lookupTransform(odom_frame_, msg->header.frame_id, ros::Time(0),
-                          transform);
+      // std::string frame_id = msg->header.frame_id;
+      std::string frame_id = "base_footprint";
+      tf_.lookupTransform(odom_frame_, frame_id, ros::Time(0), transform);
       translation << transform.getOrigin().getX(), transform.getOrigin().getY();
       yaw = tf::getYaw(transform.getRotation());
     } catch (tf::TransformException ex) {
@@ -72,14 +84,13 @@ class ScanFrameBufferNode {
         return;
       }
     }
+
     mtx_.lock();
-    // std::shared_ptr<frame_buffer::ScanFrame> frame(
-    //     new frame_buffer::ScanFrame(0.0, translation, yaw, angles_,
-    //     msg->ranges));
-    frames_.emplace_back(new frame_buffer::ScanFrame(0.0, translation, yaw,
-                                                     angles_, msg->ranges));
-    std::cout << "new frame inserted. " << frames_.size() << std::endl;
+    frames_.emplace_back(new frame_buffer::ScanFrame(
+        msg->header.stamp.toSec(), translation, yaw,
+        depth_to_scan_->angles(), depth_to_scan_->convert(cv_ptr->image)));
     if (frames_.size() > frame_size_) frames_.pop_front();
+    std::cout << "new frame inserted. " << frames_.size() << std::endl;
     mtx_.unlock();
   }
 

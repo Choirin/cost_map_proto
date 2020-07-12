@@ -21,7 +21,7 @@ public:
   ScanFrame(const double &timestamp, const Eigen::Vector2d &translation, const double &rotation,
             const std::shared_ptr<std::vector<float>> &angles,
             const std::vector<float> &ranges);
-  ScanFrame(const double &timestamp,
+  ScanFrame(const double &timestamp, const Eigen::Vector2d &translation, const double &rotation,
             const std::shared_ptr<std::vector<float>> &angles,
             const std::shared_ptr<std::vector<float>> &ranges);
   ~ScanFrame() {}

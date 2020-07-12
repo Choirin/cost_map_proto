@@ -1,5 +1,6 @@
 <launch>
-  <arg name="rosbag" default="/media/psf/Home/Downloads/wifi_rosbags/b3test1.bag" />
+  <!-- <arg name="rosbag" default="/workspace/data/data/gx/rosbag/20200616_082436.bag" /> -->
+  <arg name="rosbag" default="/media/psf/Home/data/gx/rosbag/20200616_082436.bag" />
 
   <node pkg="rosbag" type="play" name="player"
         args="--clock $(arg rosbag)"
@@ -7,7 +8,7 @@
 
   <node pkg="frame_buffer" type="frame_buffer_node" name="frame_buffer_node" output="screen" />
 
-  <node pkg="tf2_ros" type="static_transform_publisher" name="base_link_scan" args="0 0 0 0 0 0 base_link laser" />
+  <node pkg="tf2_ros" type="static_transform_publisher" name="base_link_scan" args="0 0 0 0 0 0 base_footprint depth" />
 
   <node pkg="rviz" type="rviz" name="rviz" required="true" />
 

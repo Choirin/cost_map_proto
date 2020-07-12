@@ -1,6 +1,7 @@
 #pragma once
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+#include <Eigen/Geometry>
 
 #include <opencv2/opencv.hpp>
 
@@ -8,11 +9,14 @@
 
 class DepthToScan {
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   DepthToScan(int width, int height, double fx, double fy, double cx, double cy,
               double factor);
   ~DepthToScan() {}
 
-  std::shared_ptr<frame_buffer::ScanFrame> convert(const cv::Mat &depth_image);
+  std::shared_ptr<std::vector<float>> angles() { return angles_; }
+
+  std::shared_ptr<std::vector<float>> convert(const cv::Mat &depth_image);
 
  private:
   int width_;
@@ -24,10 +28,15 @@ class DepthToScan {
   double factor_;
   std::vector<double> coeff_;
 
-  int lower_height_;
-  int upper_height_;
+  double lower_height_;
+  double upper_height_;
+
+  double lower_range_;
+  double upper_range_;
+
+  double optical_axis_pitch_;
 
   std::shared_ptr<std::vector<float>> angles_;
 
-  void initialize_matrix();
+  void initialize_coefficient();
 };

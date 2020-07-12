@@ -30,9 +30,12 @@ ScanFrame::ScanFrame(const double &timestamp,
 }
 
 ScanFrame::ScanFrame(const double &timestamp,
+                     const Eigen::Vector2d &translation, const double &rotation,
                      const std::shared_ptr<std::vector<float>> &angles,
                      const std::shared_ptr<std::vector<float>> &ranges)
     : timestamp_(timestamp),
+      translation_(translation),
+      rotation_(rotation),
       angles_(angles),
       ranges_(ranges) {
 }

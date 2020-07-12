@@ -20,6 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   pcl_ros
   cv_bridge
+  image_transport
 )
 
 ## System dependencies are found with CMake's conventions
