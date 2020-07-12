@@ -67,7 +67,7 @@ class ScanFrameBufferNode {
     try {
       tf::StampedTransform transform;
       // std::string frame_id = msg->header.frame_id;
-      std::string frame_id = "base_footprint";
+      std::string frame_id = "depth_base";
       tf_.lookupTransform(odom_frame_, frame_id, ros::Time(0), transform);
       translation << transform.getOrigin().getX(), transform.getOrigin().getY();
       yaw = tf::getYaw(transform.getRotation());

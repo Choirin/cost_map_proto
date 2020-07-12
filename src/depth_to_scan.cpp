@@ -9,8 +9,8 @@ DepthToScan::DepthToScan(int width, int height, double fx, double fy, double cx,
       cx_(cx),
       cy_(cy),
       factor_(factor),
-      lower_height_(0.05),
-      upper_height_(0.1),
+      lower_height_(-0.05),
+      upper_height_(0.0),
       lower_range_(0.2),
       upper_range_(2.0),
       optical_axis_pitch_(DEG2RAD(10)) {
@@ -21,7 +21,7 @@ std::shared_ptr<std::vector<float>> DepthToScan::convert(const cv::Mat &depth_im
   std::shared_ptr<std::vector<float>> ranges(
       new std::vector<float>(width_, INFINITY));
 
-  auto pdepth = depth_image.ptr<unsigned short int>(0);
+  auto pdepth = depth_image.ptr<uint16_t>(0);
   double *pcoeff = coeff_.data();
   for (int v = 0; v < height_; ++v) {
     for (int u = 0; u < width_; ++u, ++pdepth) {
@@ -56,7 +56,7 @@ void DepthToScan::initialize_coefficient() {
 
       // TODO: 高さ(y)方向の変換がなんかおかしそう
       // base coordinate
-      y = -y_cam * c_pitch + z_cam * s_pitch;
+      y = y_cam * c_pitch - z_cam * s_pitch;
       z = y_cam * s_pitch + z_cam * c_pitch;
       range = sqrt(x_cam * x_cam + z * z);
       if (v == int(height_ / 2))
