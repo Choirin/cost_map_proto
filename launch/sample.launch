@@ -1,0 +1,14 @@
+<launch>
+  <arg name="rosbag" default="/media/psf/Home/Downloads/wifi_rosbags/b3test1.bag" />
+
+  <node pkg="rosbag" type="play" name="player"
+        args="--clock $(arg rosbag)"
+        required="true" />
+
+  <node pkg="frame_buffer" type="frame_buffer_node" name="frame_buffer_node" output="screen" />
+
+  <node pkg="tf2_ros" type="static_transform_publisher" name="base_link_scan" args="0 0 0 0 0 0 base_link laser" />
+
+  <node pkg="rviz" type="rviz" name="rviz" required="true" />
+
+</launch>
