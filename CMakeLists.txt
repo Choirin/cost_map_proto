@@ -27,6 +27,7 @@ find_package(catkin REQUIRED COMPONENTS
 # find_package(Boost REQUIRED COMPONENTS system)
 
 find_package(Eigen3 REQUIRED)
+find_package(OpenCV REQUIRED)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -130,6 +131,7 @@ catkin_package(
 include_directories(
   include
   ${EIGEN3_INCLUDE_DIR}
+  ${OpenCV_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -144,6 +146,7 @@ add_library(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
+  ${OpenCV_LIBS}
   ${catkin_LIBRARIES}
 )
 

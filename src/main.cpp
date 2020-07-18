@@ -14,6 +14,7 @@
 
 #include "frame_buffer/scan_frame.hpp"
 #include "depth_to_scan/depth_to_scan.hpp"
+#include "cost_map/cost_map.hpp"
 
 class ScanFrameBufferNode {
  protected:
@@ -26,10 +27,10 @@ class ScanFrameBufferNode {
 
   std::unique_ptr<DepthToScan> depth_to_scan_;
 
-  std::shared_ptr<std::vector<float>> angles_;
-
   size_t frame_size_;
   std::deque<std::shared_ptr<frame_buffer::ScanFrame>> frames_;
+
+  std::unique_ptr<cost_map::CostMap> cost_map_;
 
   std::string odom_frame_;
 
@@ -38,7 +39,6 @@ class ScanFrameBufferNode {
  public:
   ScanFrameBufferNode()
       : it_(nh_),
-        angles_(std::make_shared<std::vector<float>>()),
         frame_size_(20),
         odom_frame_("odom") {
     depth_to_scan_ = std::make_unique<DepthToScan>(
@@ -46,6 +46,9 @@ class ScanFrameBufferNode {
         195.26491142934, 195.484689318979,
         111.31867165296, 86.8194913656314,
         1000.0);
+
+    cost_map_ = std::make_unique<cost_map::CostMap>();
+
     depth_sub_ =
         it_.subscribe("/depth/image_raw", 1,
                       boost::bind(&ScanFrameBufferNode::callback, this, _1));
@@ -78,7 +81,7 @@ class ScanFrameBufferNode {
 
     if (frames_.size() != 0) {
       // insert a frame, if there is a large difference in distance or angle
-      auto d_translation = *frames_.back()->translation() - translation;
+      auto d_translation = frames_.back()->translation() - translation;
       auto d_rotation = fmod(fabs(frames_.back()->rotation() - yaw), M_PI);
       if (d_translation.norm() < 0.3 && d_rotation < 0.1) {
         return;
@@ -91,6 +94,9 @@ class ScanFrameBufferNode {
         depth_to_scan_->angles(), depth_to_scan_->convert(cv_ptr->image)));
     if (frames_.size() > frame_size_) frames_.pop_front();
     std::cout << "new frame inserted. " << frames_.size() << std::endl;
+
+    cost_map_->update(frames_.back());
+    cost_map_->save("/home/kohei/mymap.png");
     mtx_.unlock();
   }
 

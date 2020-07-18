@@ -30,8 +30,8 @@ public:
   std::shared_ptr<std::vector<float>> angles() { return angles_; }
   std::shared_ptr<std::vector<float>> ranges() { return ranges_; }
 
-  Eigen::Vector2d *translation() { return &translation_; }
-  double rotation() { return rotation_; }
+  const Eigen::Vector2d &translation() const{ return translation_; }
+  const double &rotation() const{ return rotation_; }
 
   double *mutable_translation() { return translation_.data(); }
   double *mutable_rotation() { return &rotation_; }
