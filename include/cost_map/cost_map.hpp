@@ -20,36 +20,9 @@ class CostMap {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   CostMap() : resolution_(0.05) {
     origin_ << 250 * resolution_, 250 * resolution_;
-    data_ = Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic>::Constant(500, 500, 200);
+    data_ = Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>::Constant(500, 500, 200.0 / 255);
   }
   ~CostMap() {}
-
-  void save(const std::string &image_path) {
-    cv::Mat img;
-    eigen2cv(data_, img);
-    cv::imwrite(image_path, img);
-  }
-
-  void update(const std::shared_ptr<frame_buffer::ScanFrame> &scan) {
-    Eigen::Vector2d offset;
-    offset << 10, 11;
-    const auto &translation = scan->translation();
-    std::cout << translation << std::endl;
-    const auto &rotation = scan->rotation();
-    Eigen::Array2i center_m, ray_m;
-    if (!world_to_map(translation - offset, center_m)) return;
-    std::vector<Eigen::Vector2d> points;
-    scan->transformed_scan(points);
-    for (const auto &point : points) {
-      // TODO: check range
-      if (!world_to_map(point - offset, ray_m)) continue;
-      bresenham(center_m, ray_m,
-                [this](Eigen::Array2i index) {
-                  data_(index(0), index(1)) = 255;
-                });
-      data_(ray_m(0), ray_m(1)) = 0;
-    }
-  }
 
   inline bool world_to_map(const Eigen::Vector2d &position_w, Eigen::Array2i &index_m) const{
     Eigen::Vector2d position_m =
@@ -64,8 +37,41 @@ class CostMap {
     return false;
   }
 
+  float &at(const Eigen::Array2i &index) {
+    assert(0 <= index(0) && index(0) < data_.rows());
+    assert(0 <= index(1) && index(1) < data_.cols());
+    return data_(index(0), index(1));
+  }
+
+  void save(const std::string &image_path) {
+    Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic> data =
+        (data_ * 255).cast<uint8_t>();
+    cv::Mat img;
+    eigen2cv(data, img);
+    cv::imwrite(image_path, img);
+  }
+
+  void update(const std::shared_ptr<frame_buffer::ScanFrame> &scan) {
+    Eigen::Vector2d offset;
+    offset << 10, 11;
+    const auto &translation = scan->translation();
+    Eigen::Array2i center_m, ray_m;
+    if (!world_to_map(translation - offset, center_m)) return;
+    std::vector<Eigen::Vector2d> points;
+    scan->transformed_scan(points);
+    for (const auto &point : points) {
+      // TODO: check range
+      if (!world_to_map(point - offset, ray_m)) continue;
+      bresenham(center_m, ray_m,
+                [this](Eigen::Array2i index) {
+                  at(index) = 1;
+                });
+      at(ray_m) = 0;
+    }
+  }
+
  private:
-  Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic> data_;
+  Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic> data_;
   Eigen::Vector2d origin_;
   double resolution_;
 

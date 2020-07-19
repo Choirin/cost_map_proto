@@ -96,7 +96,7 @@ class ScanFrameBufferNode {
     std::cout << "new frame inserted. " << frames_.size() << std::endl;
 
     cost_map_->update(frames_.back());
-    cost_map_->save("/home/kohei/mymap.png");
+    cost_map_->save("/workspace/data/data/mymap.pgm");
     mtx_.unlock();
   }
 
