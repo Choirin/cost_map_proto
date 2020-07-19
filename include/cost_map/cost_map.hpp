@@ -5,6 +5,7 @@
 #include <iostream>
 #include <iterator>
 #include <memory>
+#include <type_traits>
 #include <vector>
 
 #include <Eigen/Geometry>
@@ -63,8 +64,9 @@ class CostMap {
       // TODO: check range
       if (!world_to_map(point - offset, ray_m)) continue;
       bresenham(center_m, ray_m,
-                [this](Eigen::Array2i index) {
+                [this](const Eigen::Array2i &index) {
                   at(index) = 1;
+                  return true;
                 });
       at(ray_m) = 0;
     }
@@ -78,6 +80,10 @@ class CostMap {
   template <typename ActionType>
   inline void bresenham(const Eigen::Array2i &a, const Eigen::Array2i &b,
                         ActionType action) const{
+    static_assert(
+        std::is_same<std::invoke_result_t<ActionType, const Eigen::Array2i &>,
+                     bool>::value,
+        "Expected functor-type bool(const Eige::Array2i &)");
     Eigen::Array2i index = a;
     auto &xa = index.data()[0], &ya = index.data()[1];
     auto &xb = b.data()[0], &yb = b.data()[1];

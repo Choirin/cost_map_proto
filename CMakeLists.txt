@@ -4,7 +4,7 @@ project(cost_map_proto)
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 
 set(CMAKE_CXX_FLAGS "-Wall")
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3")
@@ -117,7 +117,7 @@ find_package(OpenCV REQUIRED)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES frame_buffer
+#  LIBRARIES cost_map_proto
 #  CATKIN_DEPENDS other_catkin_pkg
 #  DEPENDS system_lib
 )
@@ -158,7 +158,7 @@ target_link_libraries(${PROJECT_NAME}
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/frame_buffer_node.cpp)
+# add_executable(${PROJECT_NAME}_node src/cost_map_proto_node.cpp)
 add_executable(${PROJECT_NAME}_node
   src/main
 )
@@ -222,7 +222,7 @@ target_link_libraries(${PROJECT_NAME}_node
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_frame_buffer.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_cost_map_proto.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
