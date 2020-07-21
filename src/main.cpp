@@ -14,7 +14,7 @@
 
 #include "frame_buffer/scan_frame.hpp"
 #include "depth_to_scan/depth_to_scan.hpp"
-#include "cost_map/cost_map.hpp"
+#include "cost_map/cost_map_scan.hpp"
 
 class ScanFrameBufferNode {
  protected:
@@ -30,7 +30,7 @@ class ScanFrameBufferNode {
   size_t frame_size_;
   std::deque<std::shared_ptr<frame_buffer::ScanFrame>> frames_;
 
-  std::unique_ptr<cost_map::CostMap> cost_map_;
+  std::unique_ptr<cost_map::CostMapScan> cost_map_;
 
   std::string odom_frame_;
 
@@ -47,7 +47,7 @@ class ScanFrameBufferNode {
         111.31867165296, 86.8194913656314,
         1000.0);
 
-    cost_map_ = std::make_unique<cost_map::CostMap>();
+    cost_map_ = std::make_unique<cost_map::CostMapScan>();
 
     depth_sub_ =
         it_.subscribe("/depth/image_raw", 1,
@@ -96,7 +96,9 @@ class ScanFrameBufferNode {
     std::cout << "new frame inserted. " << frames_.size() << std::endl;
 
     cost_map_->update(frames_.back());
-    cost_map_->save("/workspace/data/data/mymap.pgm");
+    cost_map_->save("occupied", "/workspace/data/data/occupied.png");
+    cost_map_->save("free", "/workspace/data/data/free.png");
+    cost_map_->save("cost", "/workspace/data/data/cost.png");
     mtx_.unlock();
   }
 
