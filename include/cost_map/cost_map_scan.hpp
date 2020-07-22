@@ -22,9 +22,9 @@ class CostMapScan : public CostMap {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   CostMapScan() {
-    initial_ = log(0.5 / (1 / 0.5));
-    hit_ = log(0.8 / (1 / 0.8));
-    miss_ = log(0.2 / (1 / 0.2));
+    initial_ = log(0.5 / (1 - 0.5));
+    hit_ = log(0.8 / (1 - 0.8));
+    miss_ = log(0.2 / (1 - 0.2));
     add("free", initial_);
     add("occupied", initial_);
     add("cost", initial_);
@@ -47,7 +47,7 @@ public:
       if (corner_rt(0) < point(0)) corner_rt(0) = point(0);
       if (corner_rt(1) < point(1)) corner_rt(1) = point(1);
     }
-    extend(corner_lb, corner_rt, 0.5);
+    extend(corner_lb, corner_rt, initial_);
 
     Eigen::Array2i center_m, ray_m;
     world_to_map(translation, center_m);
@@ -59,12 +59,12 @@ public:
       bresenham(center_m, ray_m,
                 [this, &ray_m](const Eigen::Array2i &index) {
                   if ((index == ray_m).all()) return false;
-                  at("free", index) = 1;
-                  at("cost", index) = 1;
+                  at("free", index) += miss_;
+                  at("cost", index) += miss_;
                   return true;
                 });
-      at("occupied", ray_m) = 0;
-      at("cost", ray_m) = 0;
+      at("occupied", ray_m) += hit_;
+      at("cost", ray_m) += hit_;
     }
   }
 

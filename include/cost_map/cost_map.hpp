@@ -118,9 +118,13 @@ public:
   }
 
   void save_a(const std::string &layer, const std::string &image_path) {
-    auto array = data_[layer]->array();
+    Eigen::Array<float, Eigen::Dynamic, Eigen::Dynamic> array = data_[layer]->array();
+    array = array.exp() / (1 + array.exp());
     Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic> data =
-        (array.exp() / (1 + array.exp()) * 255).matrix().cast<uint8_t>();
+        ((array < 0.3).cast<uint8_t>() * 255 +
+         (0.7 < array).cast<uint8_t>() * 0 +
+         (0.3 <= array && array <= 0.7).cast<uint8_t>() * 200)
+            .matrix();
     cv::Mat img;
     eigen2cv(data, img);
     cv::imwrite(image_path, img);
