@@ -9,11 +9,11 @@ DepthToScan::DepthToScan(int width, int height, double fx, double fy, double cx,
       cx_(cx),
       cy_(cy),
       factor_(factor),
-      lower_height_(0.05),
-      upper_height_(0.15),
-      lower_range_(0.2),
-      upper_range_(2.0),
-      optical_axis_pitch_(DEG2RAD(10)) {
+      lower_height_(-INFINITY),
+      upper_height_(INFINITY),
+      lower_range_(0),
+      upper_range_(INFINITY),
+      optical_axis_pitch_(0) {
   initialize_coefficient();
 }
 
@@ -28,6 +28,7 @@ std::shared_ptr<std::vector<float>> DepthToScan::convert(const cv::Mat &depth_im
     for (int u = 0; u < width_; ++u, --pdepth) {
       auto range = (*pdepth) * *(pcoeff++);
       auto y = (*pdepth) * *(pcoeff++);
+      // store minimum range with valid conditions
       if (lower_height_ < y && y < upper_height_ &&
           lower_range_ < range && range < upper_range_ &&
           range < (*ranges)[u])

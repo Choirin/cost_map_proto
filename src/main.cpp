@@ -46,6 +46,16 @@ class ScanFrameBufferNode {
         195.26491142934, 195.484689318979,
         111.31867165296, 86.8194913656314,
         1000.0);
+    depth_to_scan_->set_height(0.05, 0.1);
+    depth_to_scan_->set_range(0.2, 2.0);
+    depth_to_scan_->set_optical_axis_pitch(DEG2RAD(10));
+
+    auto angles = depth_to_scan_->angles();
+    auto last_angle = angles->at(0);
+    for (auto const &angle : *angles) {
+      std::cout << RAD2DEG(angle - last_angle) << std::endl;
+      last_angle = angle;
+    }
 
     cost_map_ = std::make_unique<cost_map::CostMapScan>();
 

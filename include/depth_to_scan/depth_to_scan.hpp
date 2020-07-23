@@ -12,8 +12,19 @@ class DepthToScan {
               double factor);
   ~DepthToScan() {}
 
-  std::shared_ptr<std::vector<float>> angles() { return angles_; }
+  void set_height(double lower, double upper) {
+    lower_height_ = lower;
+    upper_height_ = upper;
+  }
+  void set_range(double lower, double upper) {
+    lower_range_ = lower;
+    upper_range_ = upper;
+  }
+  void set_optical_axis_pitch(double optical_axis_pitch) {
+    optical_axis_pitch_ = optical_axis_pitch;
+  }
 
+  std::shared_ptr<std::vector<float>> angles() { return angles_; }
   std::shared_ptr<std::vector<float>> convert(const cv::Mat &depth_image);
 
  private:
