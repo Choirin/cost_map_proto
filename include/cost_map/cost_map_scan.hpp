@@ -21,19 +21,30 @@ namespace cost_map {
 class CostMapScan : public CostMap {
 public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  CostMapScan() {
-    sensor_model_initial_ = log(0.5 / (1 - 0.5));
-    sensor_model_hit_ = log(0.7 / (1 - 0.7));
-    sensor_model_miss_ = log(0.4 / (1 - 0.4));
-
-    sensor_model_min_ = log(0.12 / (1 - 0.12));
-    sensor_model_max_ = log(0.97 / (1 - 0.97));
-
+  CostMapScan()
+      : sensor_model_initial_(sensor_model(0.5)),
+        sensor_model_hit_(sensor_model(0.7)),
+        sensor_model_miss_(sensor_model(0.4)),
+        sensor_model_min_(sensor_model(0.12)),
+        sensor_model_max_(sensor_model(0.97)),
+        scan_range_max_(INFINITY) {
     add("free", sensor_model_initial_);
     add("occupied", sensor_model_initial_);
     add("cost", sensor_model_initial_);
   }
   ~CostMapScan() {}
+
+  void set_sensor_model_hit(const float hit) {
+    sensor_model_hit_ = sensor_model(hit);
+  }
+  void set_sensor_model_miss(const float miss) {
+    sensor_model_miss_ = sensor_model(miss);
+  }
+  void set_sensor_model_range(const float min, const float max) {
+    sensor_model_min_ = sensor_model(min);
+    sensor_model_max_ = sensor_model(max);
+  }
+  void set_scan_range_max(const float max) { scan_range_max_ = max; }
 
   void update(const std::shared_ptr<frame_buffer::ScanFrame> &scan) {
     const auto &translation = scan->translation();
@@ -44,7 +55,7 @@ public:
     Eigen::Vector2d corner_lb = translation, corner_rt = translation;
     for (size_t i = 0; i < scan->ranges()->size(); ++i) {
       auto range = (*scan->ranges())[i];
-      if (5.0 < range) continue;
+      if (scan_range_max_ < range) continue;
       auto &point = points[i];
       if (point(0) < corner_lb(0)) corner_lb(0) = point(0);
       if (point(1) < corner_lb(1)) corner_lb(1) = point(1);
@@ -86,6 +97,7 @@ public:
   }
 
 private:
+  inline float sensor_model(const float raw) { return logf(raw / (1.0 - raw)); }
   void hit(const std::string &layer, const Eigen::Array2i &index) {
     at(layer, index) += sensor_model_hit_;
     if (sensor_model_max_ < at(layer, index)) at(layer, index) = sensor_model_max_;
@@ -100,6 +112,8 @@ private:
   float sensor_model_miss_;
   float sensor_model_min_;
   float sensor_model_max_;
+
+  float scan_range_max_;
 };
 
 }  // namespace cost_map

@@ -58,6 +58,7 @@ class ScanFrameBufferNode {
     }
 
     cost_map_ = std::make_unique<cost_map::CostMapScan>();
+    cost_map_->set_scan_range_max(1.9);
 
     depth_sub_ =
         it_.subscribe("/depth/image_raw", 1,

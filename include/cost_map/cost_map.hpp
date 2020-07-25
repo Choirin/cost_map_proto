@@ -36,12 +36,22 @@ public:
     // overlap on the original map coords
     Eigen::Array2i old_lb = offset_m.max(Eigen::Array2i::Zero());
     Eigen::Array2i old_rt = (offset_m + size).min(size_);
+    // std::cout << "old_rect: "
+    //           << old_lb(0) << ", " << old_lb(1) << ", "
+    //           << old_rt(0) << ", " << old_rt(1) << std::endl;
+
     // overlap on the new map coords
     Eigen::Array2i new_lb = (-offset_m).max(Eigen::Array2i::Zero());
     Eigen::Array2i new_rt = (-offset_m + size_).min(size);
+    // std::cout << "new_rect: "
+    //           << new_lb(0) << ", " << new_lb(1) << ", "
+    //           << new_rt(0) << ", " << new_rt(1) << std::endl;
+
     // overlap size
     Eigen::Array2i overlap_size = new_rt - new_lb;
     Eigen::Array2i overlap_size_ = old_rt - old_lb;
+    // std::cout << "new: " << overlap_size(0) << ", " << overlap_size(1) << std::endl;
+    // std::cout << "old: " << overlap_size_(0) << ", " << overlap_size_(1) << std::endl;
     assert((overlap_size == overlap_size_).all());
 
     // update geometry
@@ -75,7 +85,8 @@ public:
     }
     Eigen::Vector2d origin = (new_corner_lb * resolution_).matrix();
     Eigen::Array2i size = (new_corner_rt - new_corner_lb + 0.5).cast<int>();
-    // std::cout << "size: " << size << std::endl;
+    // std::cout << "origin: " << origin(0) << ", " << origin(1) << std::endl;
+    // std::cout << "size: " << size(0) << ", " << size(1) << std::endl;
     resize(size, origin, value);
   }
 
