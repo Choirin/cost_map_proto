@@ -86,6 +86,15 @@ public:
                 size_(0), size_(1), value));
   }
 
+  void add(const std::string &layer,
+           const std::shared_ptr<
+               Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>>
+               data) {
+    assert(size_(0) == data->rows());
+    assert(size_(1) == data->cols());
+    data_[layer] = data;
+  }
+
   inline void world_to_map(const Eigen::Vector2d &position_w, Eigen::Array2i &index_m) const{
     Eigen::Vector2d position_m =
         (position_w - origin_) / resolution_ + Eigen::Vector2d::Constant(0.5);
@@ -100,6 +109,10 @@ public:
     auto &data = data_[layer];
     return (0 <= index(0) && index(0) < data->rows() &&
             0 <= index(1) && index(1) < data->cols());
+  }
+
+  std::shared_ptr<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>> layer(const std::string &layer) {
+    return data_[layer];
   }
 
   float &at(const std::string &layer, const Eigen::Array2i &index) {
