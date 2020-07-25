@@ -106,9 +106,9 @@ class ScanFrameBufferNode {
     std::cout << "new frame inserted. " << frames_.size() << std::endl;
 
     cost_map_->update(frames_.back());
-    cost_map_->save_a("occupied", "/workspace/data/data/occupied.png");
-    cost_map_->save_a("free", "/workspace/data/data/free.png");
-    cost_map_->save_a("cost", "/workspace/data/data/cost.png");
+    cost_map_->save("occupied", "/workspace/data/data/occupied.png");
+    cost_map_->save("free", "/workspace/data/data/free.png");
+    cost_map_->save("cost", "/workspace/data/data/cost.png");
     mtx_.unlock();
   }
 

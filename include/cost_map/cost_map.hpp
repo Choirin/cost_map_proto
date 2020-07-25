@@ -111,7 +111,7 @@ public:
             0 <= index(1) && index(1) < data->cols());
   }
 
-  std::shared_ptr<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>> layer(const std::string &layer) {
+  std::shared_ptr<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>> data(const std::string &layer) {
     return data_[layer];
   }
 
@@ -125,19 +125,6 @@ public:
   void save(const std::string &layer, const std::string &image_path) {
     Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic> data =
         (*data_[layer] * 255).cast<uint8_t>();
-    cv::Mat img;
-    eigen2cv(data, img);
-    cv::imwrite(image_path, img);
-  }
-
-  void save_a(const std::string &layer, const std::string &image_path) {
-    Eigen::Array<float, Eigen::Dynamic, Eigen::Dynamic> array = data_[layer]->array();
-    array = array.exp() / (1 + array.exp());
-    Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic> data =
-        ((array < 0.3).cast<uint8_t>() * 255 +
-         (0.7 < array).cast<uint8_t>() * 0 +
-         (0.3 <= array && array <= 0.7).cast<uint8_t>() * 200)
-            .matrix();
     cv::Mat img;
     eigen2cv(data, img);
     cv::imwrite(image_path, img);
