@@ -51,7 +51,7 @@ public:
     std::vector<Eigen::Vector2d> points;
     scan->transformed_scan(points);
 
-    // TODO: update map size
+    // update map size
     Eigen::Vector2d corner_lb = translation, corner_rt = translation;
     for (size_t i = 0; i < scan->ranges()->size(); ++i) {
       auto range = (*scan->ranges())[i];

@@ -28,6 +28,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(Eigen3 REQUIRED)
 find_package(OpenCV REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -132,6 +133,7 @@ include_directories(
   include
   ${EIGEN3_INCLUDE_DIR}
   ${OpenCV_INCLUDE_DIRS}
+  ${YAML_CPP_INCLUDE_DIR}
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -147,6 +149,7 @@ add_library(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
   ${OpenCV_LIBS}
+  ${YAML_CPP_LIBRARIES}
   ${catkin_LIBRARIES}
 )
 
@@ -160,7 +163,11 @@ target_link_libraries(${PROJECT_NAME}
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/cost_map_proto_node.cpp)
 add_executable(${PROJECT_NAME}_node
-  src/main
+  src/main.cpp
+)
+
+add_executable(amcl_node
+  src/amcl.cpp
 )
 
 ## Rename C++ executable without prefix
@@ -178,6 +185,11 @@ add_executable(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
 target_link_libraries(${PROJECT_NAME}_node
+  ${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(amcl_node
   ${PROJECT_NAME}
   ${catkin_LIBRARIES}
 )

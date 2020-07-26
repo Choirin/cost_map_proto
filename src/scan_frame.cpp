@@ -40,7 +40,7 @@ ScanFrame::ScanFrame(const double &timestamp,
       ranges_(ranges) {
 }
 
-void ScanFrame::transformed_scan(std::vector<Eigen::Vector2d> &points) {
+void ScanFrame::transformed_scan(std::vector<Eigen::Vector2d> &points) const{
   Eigen::Matrix2d rot_matrix;
   rot_matrix << cos(rotation_), -sin(rotation_), sin(rotation_), cos(rotation_);
   size_t size = ranges_->size();

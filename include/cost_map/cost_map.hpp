@@ -26,7 +26,7 @@ public:
   ~CostMap() {}
 
   void set_origin(const Eigen::Vector2d &origin) { origin_ = origin; }
-  void set_size(const Eigen::Array2i &size) { size_ = size; }
+  void set_resolution(const double &resolution) { resolution_ = resolution; }
 
   void get_origin(Eigen::Vector2d &origin) { origin = origin_; }
   float get_resolution() { return resolution_; }
@@ -101,6 +101,8 @@ public:
            const std::shared_ptr<
                Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>>
                data) {
+    if ((size_ == Eigen::Array2i::Zero()).any())
+      size_ = Eigen::Array2i(data->rows(), data->cols());
     assert(size_(0) == data->rows());
     assert(size_(1) == data->cols());
     data_[layer] = data;
@@ -157,7 +159,7 @@ protected:
     int err = dx + dy, e2; /* error value e_xy */
 
     for (;;) { /* loop */
-      action(index);
+      if (!action(index)) break;
       if (xa == xb && ya == yb) break;
       e2 = 2 * err;
       if (e2 >= dy) {

@@ -51,11 +51,11 @@ class ScanFrameBufferNode {
     depth_to_scan_->set_optical_axis_pitch(DEG2RAD(10));
 
     auto angles = depth_to_scan_->angles();
-    auto last_angle = angles->at(0);
-    for (auto const &angle : *angles) {
-      std::cout << RAD2DEG(angle - last_angle) << std::endl;
-      last_angle = angle;
-    }
+    // auto last_angle = angles->at(0);
+    // for (auto const &angle : *angles) {
+    //   std::cout << RAD2DEG(angle - last_angle) << std::endl;
+    //   last_angle = angle;
+    // }
 
     cost_map_ = std::make_unique<cost_map::CostMapScan>();
     cost_map_->set_scan_range_max(1.9);
@@ -107,6 +107,9 @@ class ScanFrameBufferNode {
     std::cout << "new frame inserted. " << frames_.size() << std::endl;
 
     cost_map_->update(frames_.back());
+    Eigen::Vector2d origin;
+    cost_map_->get_origin(origin);
+    std::cout << origin << std::endl;
     cost_map_->save("occupied", "/workspace/data/data/occupied.png");
     cost_map_->save("free", "/workspace/data/data/free.png");
     cost_map_->save("cost", "/workspace/data/data/cost.png");
@@ -140,7 +143,6 @@ class ScanFrameBufferNode {
     point_cloud->header.frame_id = "odom";
     pcl_conversions::toPCL(ros::Time::now(), point_cloud->header.stamp);
     pub.publish(point_cloud);
-    std::cout << "points: " << point_cloud->points.size() << std::endl;
   }
 };
 

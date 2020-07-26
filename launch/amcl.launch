@@ -1,0 +1,12 @@
+<launch>
+  <arg name="rosbag" default="/workspace/data/data/test.bag" />
+
+  <node pkg="rosbag" type="play" name="player"
+        args="--clock $(arg rosbag)"
+        required="true" />
+
+  <node pkg="cost_map_proto" type="amcl_node" name="amcl_node" output="screen" />
+
+  <node pkg="tf2_ros" type="static_transform_publisher" name="base_link_scan" args="0.035 0 0 0 0 0 base_footprint depth_base" />
+
+</launch>
