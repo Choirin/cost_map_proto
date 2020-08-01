@@ -166,8 +166,8 @@ add_executable(${PROJECT_NAME}_node
   src/main.cpp
 )
 
-add_executable(amcl_node
-  src/amcl.cpp
+add_executable(mcl_node
+  src/mcl_node.cpp
 )
 
 ## Rename C++ executable without prefix
@@ -189,7 +189,7 @@ target_link_libraries(${PROJECT_NAME}_node
   ${catkin_LIBRARIES}
 )
 
-target_link_libraries(amcl_node
+target_link_libraries(mcl_node
   ${PROJECT_NAME}
   ${catkin_LIBRARIES}
 )

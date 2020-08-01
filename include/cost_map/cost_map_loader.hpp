@@ -18,7 +18,7 @@ public:
     std::cout << lconf << std::endl;
 
     std::string image = lconf["image"].as<std::string>();
-    image = "/workspace/data/data/2d_map/cost.png";
+    image = "/workspace/data/data/2d_map/image.png";
     double resolution = lconf["resolution"].as<double>();
     std::vector<double> origin = lconf["origin"].as<std::vector<double>>();
     double occupied_thresh = lconf["occupied_thresh"].as<double>();
@@ -31,21 +31,22 @@ public:
 
     Eigen::Array<float, Eigen::Dynamic, Eigen::Dynamic> array;
     if (!negate) {
-      array = (255 - data_uc.array().cast<float>()) / 255.0;
+      array = (255.0 - data_uc.array().cast<float>()) / 255.0;
     } else {
       array = data_uc.array().cast<float>() / 255.0;
     }
+    std::cout << array;
 
-    Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic> occupied =
-        (array < occupied_thresh).cast<float>();
-    Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic> free =
-        (free_thresh < array).cast<float>();
-    Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic> unknown =
-        ((occupied_thresh <= array) * (array <= free_thresh)).cast<float>();
+    Eigen::Array<float, Eigen::Dynamic, Eigen::Dynamic> occupied =
+        (occupied_thresh < array).cast<float>();
+    Eigen::Array<float, Eigen::Dynamic, Eigen::Dynamic> free =
+        (array < free_thresh).cast<float>();
+    Eigen::Array<float, Eigen::Dynamic, Eigen::Dynamic> unknown =
+        ((free_thresh <= array) && (array <= occupied_thresh)).cast<float>();
 
     float cost_initial = logf(0.5 / (1 - 0.5));
-    float cost_occupied = logf(0.1 / (1 - 0.1));
-    float cost_free = logf(0.9 / (1 - 0.9));
+    float cost_occupied = logf(0.9 / (1 - 0.9));
+    float cost_free = logf(0.1 / (1 - 0.1));
     auto data =
         std::make_shared<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>>(
             occupied * cost_occupied +

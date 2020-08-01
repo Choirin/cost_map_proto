@@ -44,6 +44,7 @@ public:
     for (size_t i = 0; i < points.size(); ++i) {
       auto &point = points.at(i);
       auto &range = scan->ranges()->at(i);
+      if (range < 0.2 || 2.0 < range) continue;
       world_to_map(point, ray_m);
       bresenham(center_m, ray_m,
                 [&](const Eigen::Array2i &index) {
@@ -51,8 +52,8 @@ public:
                   if (logf(0.5 / (1 - 0.5)) < at("cost", index)) { // is hit?
                     // TODO: calculate score
                     // distance from center_m
-                    double distance = (index - center_m).matrix().norm() * get_resolution();
-                    double sigma = 0.2;
+                    double distance = (index - center_m).cast<double>().matrix().norm() * get_resolution();
+                    double sigma = 0.08;
                     double error = range - distance;
                     score += exp(-(error * error) / (2 * sigma * sigma));
                     return false;
@@ -61,6 +62,19 @@ public:
                 });
     }
     return score;
+  }
+
+  void save(const std::string &layer, const std::string &image_path) {
+    Eigen::Array<float, Eigen::Dynamic, Eigen::Dynamic> array = data(layer)->array();
+    array = array.exp() / (1 + array.exp());
+    Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic> data =
+        ((array < 0.5).cast<uint8_t>() * 255 +
+         (0.5 < array).cast<uint8_t>() * 0 +
+         (0.5 == array).cast<uint8_t>() * 200)
+            .matrix();
+    cv::Mat img;
+    eigen2cv(data, img);
+    cv::imwrite(image_path, img);
   }
 
 private:

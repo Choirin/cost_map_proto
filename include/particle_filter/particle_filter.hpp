@@ -49,7 +49,6 @@ class MultivariateNormalDistribution {
     std::normal_distribution<double> rand_trans_dist(mu, sigma);
     target = Eigen::RowVectorXd::Zero(1, size).unaryExpr(
         [&](float dummy) { return rand_trans_dist(generator_); });
-    std::cout << target << std::endl;
   }
 
 };

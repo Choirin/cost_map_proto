@@ -35,7 +35,7 @@ void add_noises(Eigen::Vector2d &translation, double &rotation)
   rotation += t_angle;
 }
 
-class AmclNode {
+class MontecarloLocalization {
  protected:
   ros::NodeHandle nh_;
 
@@ -53,13 +53,16 @@ class AmclNode {
 
   std::string odom_frame_;
 
+  Eigen::Matrix3d transform_map_odom_;
+
   std::mutex mtx_;
 
  public:
-  AmclNode()
+  MontecarloLocalization()
       : it_(nh_),
         frame_size_(20),
-        odom_frame_("odom") {
+        odom_frame_("odom"),
+        transform_map_odom_(Eigen::Matrix3d::Identity()) {
     depth_to_scan_ = std::make_unique<DepthToScan>(
         224, 172,
         195.26491142934, 195.484689318979,
@@ -72,10 +75,11 @@ class AmclNode {
     auto angles = depth_to_scan_->angles();
     cost_map_ = std::make_shared<cost_map::CostMapMatch>(angles);
     cost_map::CostMapLoader::load("/workspace/data/data/2d_map/map.yaml", *cost_map_);
+    cost_map_->save("cost", "/workspace/data/data/test.png");
 
     depth_sub_ =
         it_.subscribe("/depth/image_raw", 1,
-                      boost::bind(&AmclNode::callback, this, _1));
+                      boost::bind(&MontecarloLocalization::callback, this, _1));
     pub = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("points", 1);
   }
 
@@ -115,38 +119,55 @@ class AmclNode {
     std::shared_ptr<frame_buffer::ScanFrame> scan(new frame_buffer::ScanFrame(
         msg->header.stamp.toSec(), translation, yaw, depth_to_scan_->angles(),
         depth_to_scan_->convert(cv_ptr->image)));
+
+    particle_filter::MultivariateNormalDistribution a;
+    size_t size = 100;
+    Eigen::Matrix3d covariance;
+    covariance << 0.1, 0.0, 0.0,
+                  0.0, 0.1, 0.0,
+                  0.0, 0.0, 0.1;
+    Eigen::MatrixXd pdf;
+    a.pdf(covariance, size, pdf);
+
+    auto score = cost_map_->match(translation, yaw, scan);
+    std::cout << translation(0) << ", " << translation(1) << ", "
+              << yaw << ", "
+              << score << std::endl;
+
+    Eigen::Vector2d likelihood_translation;
+    double likelihood_rotation;
+    double max_score = 0;
+    size_t max_idx = 0;
+    for (size_t i = 0; i < size; ++i) {
+      Eigen::Vector2d translation_r = translation + pdf.block<2, 1>(0, i);
+      double rotation_r = yaw + pdf(2, i);
+      auto score = cost_map_->match(translation_r, rotation_r, scan);
+      if (max_score < score) {
+        max_score = score;
+        likelihood_translation = translation_r;
+        likelihood_rotation = rotation_r;
+        max_idx = i;
+      }
+    }
+    std::cout << (likelihood_translation - translation).norm() << ", "
+              << abs(likelihood_rotation - yaw) << ", "
+              << max_score << std::endl;
+    std::cout << pdf.block<3, 1>(0, max_idx).transpose() << std::endl;
+    std::cout << std::endl;
+
     // mtx_.lock();
     // frames_.emplace_back(new frame_buffer::ScanFrame(
     //     msg->header.stamp.toSec(), translation, yaw,
     //     depth_to_scan_->angles(), depth_to_scan_->convert(cv_ptr->image)));
     // if (frames_.size() > frame_size_) frames_.pop_front();
     // std::cout << "new frame inserted. " << frames_.size() << std::endl;
-
-    // cost_map_->update(frames_.back());
-    // cost_map_->save("occupied", "/workspace/data/data/occupied.png");
-    // cost_map_->save("free", "/workspace/data/data/free.png");
-    auto score = cost_map_->match(translation, yaw, scan);
-    std::cout << translation(0) << ", " << translation(1) << ", "
-              << yaw << ", "
-              << score << std::endl;
-    for (int i = 0; i < 10; ++i) {
-      Eigen::Vector2d translation_r = translation;
-      double rotation_r = yaw;
-      add_noises(translation_r, rotation_r);
-      auto score = cost_map_->match(translation_r, rotation_r, scan);
-      std::cout << translation_r(0) << ", " << translation_r(1) << ", "
-                << rotation_r << ", "
-                << score << std::endl;
-    }
-      std::cout << std::endl;
-    cost_map_->save("cost", "/workspace/data/data/test.png");
     // mtx_.unlock();
   }
 };
 
 int main(int argc, char *argv[]) {
   ros::init(argc, argv, "amcl_node");
-  AmclNode amcl_node;
+  MontecarloLocalization amcl_node;
 
 #if 0
   particle_filter::MultivariateNormalDistribution a;
