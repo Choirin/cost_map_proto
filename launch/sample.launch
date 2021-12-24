@@ -1,5 +1,5 @@
 <launch>
-  <arg name="rosbag" default="/media/psf/Home/data/test.bag" />
+  <arg name="rosbag" default="/data/localization/rosbag/20210224_060112_converted.bag" />
 
   <node pkg="rosbag" type="play" name="player"
         args="--clock $(arg rosbag)"

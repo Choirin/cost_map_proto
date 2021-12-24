@@ -5,6 +5,7 @@
 #include <pcl_ros/point_cloud.h>
 #include <ros/ros.h>
 #include <sensor_msgs/image_encodings.h>
+#include <nav_msgs/OccupancyGrid.h>
 #include <tf/transform_listener.h>
 
 #include <cmath>
@@ -24,6 +25,7 @@ class ScanFrameBufferNode {
   image_transport::Subscriber depth_sub_;
   tf::TransformListener tf_;
   ros::Publisher pub;
+  ros::Publisher grid_pub_;
 
   std::unique_ptr<DepthToScan> depth_to_scan_;
 
@@ -40,7 +42,7 @@ class ScanFrameBufferNode {
   ScanFrameBufferNode()
       : it_(nh_),
         frame_size_(20),
-        odom_frame_("odom") {
+        odom_frame_("map") {
     depth_to_scan_ = std::make_unique<DepthToScan>(
         224, 172,
         195.26491142934, 195.484689318979,
@@ -64,6 +66,7 @@ class ScanFrameBufferNode {
         it_.subscribe("/depth/image_raw", 1,
                       boost::bind(&ScanFrameBufferNode::callback, this, _1));
     pub = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("points", 1);
+    grid_pub_ = nh_.advertise<nav_msgs::OccupancyGrid>("projected_map", 1);
   }
 
   void callback(const sensor_msgs::ImageConstPtr& msg) {
@@ -85,7 +88,7 @@ class ScanFrameBufferNode {
       tf_.lookupTransform(odom_frame_, frame_id, ros::Time(0), transform);
       translation << transform.getOrigin().getX(), transform.getOrigin().getY();
       yaw = tf::getYaw(transform.getRotation());
-    } catch (tf::TransformException ex) {
+    } catch (const tf::TransformException &ex) {
       ROS_ERROR("%s", ex.what());
       return;
     }
@@ -107,9 +110,31 @@ class ScanFrameBufferNode {
     std::cout << "new frame inserted. " << frames_.size() << std::endl;
 
     cost_map_->update(frames_.back());
-    cost_map_->save("occupied", "/workspace/data/data/occupied.png");
-    cost_map_->save("free", "/workspace/data/data/free.png");
-    cost_map_->save("cost", "/workspace/data/data/cost.png");
+    cost_map_->save("occupied", "/data/localization/maps/occupied.png");
+    cost_map_->save("free", "/data/localization/maps/free.png");
+    cost_map_->save("cost", "/data/localization/maps/cost.png");
+
+    Eigen::Array2i size;
+    cost_map_->get_size(size);
+    Eigen::Vector2d origin;
+    cost_map_->get_origin(origin);
+    std::cout << origin << std::endl;
+
+    nav_msgs::OccupancyGrid grid_msg;
+    grid_msg.header.frame_id = "map";
+    grid_msg.header.stamp = ros::Time::now();
+    grid_msg.info.resolution = cost_map_->get_resolution();
+    grid_msg.info.width = size[0];
+    grid_msg.info.height = size[1];
+    grid_msg.info.origin.position.x = origin[0];
+    grid_msg.info.origin.position.y = origin[1];
+    Eigen::Array<float, Eigen::Dynamic, Eigen::Dynamic> array = cost_map_->data("cost")->array();
+    array = array.exp() / (1 + array.exp());
+    Eigen::Array<uint8_t, Eigen::Dynamic, Eigen::Dynamic> data =
+        (array * 100).cast<uint8_t>();
+    grid_msg.data = std::vector<int8_t>(data.data(), data.data() + data.rows() * data.cols());
+    grid_pub_.publish(grid_msg);
+
     mtx_.unlock();
   }
 
