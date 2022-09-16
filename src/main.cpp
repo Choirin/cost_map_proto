@@ -85,7 +85,7 @@ class ScanFrameBufferNode {
       tf_.lookupTransform(odom_frame_, frame_id, ros::Time(0), transform);
       translation << transform.getOrigin().getX(), transform.getOrigin().getY();
       yaw = tf::getYaw(transform.getRotation());
-    } catch (tf::TransformException ex) {
+    } catch (const tf::TransformException &ex) {
       ROS_ERROR("%s", ex.what());
       return;
     }
