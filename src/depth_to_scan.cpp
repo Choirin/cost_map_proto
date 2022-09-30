@@ -17,7 +17,8 @@ DepthToScan::DepthToScan(int width, int height, double fx, double fy, double cx,
   initialize_coefficient();
 }
 
-std::shared_ptr<std::vector<float>> DepthToScan::convert(const cv::Mat &depth_image) {
+std::shared_ptr<std::vector<float>> DepthToScan::convert(
+    const cv::Mat &depth_image) {
   std::shared_ptr<std::vector<float>> ranges(
       new std::vector<float>(width_, INFINITY));
 
@@ -29,9 +30,8 @@ std::shared_ptr<std::vector<float>> DepthToScan::convert(const cv::Mat &depth_im
       auto range = (*pdepth) * *(pcoeff++);
       auto y = (*pdepth) * *(pcoeff++);
       // store minimum range with valid conditions
-      if (lower_height_ < y && y < upper_height_ &&
-          lower_range_ < range && range < upper_range_ &&
-          range < (*ranges)[u])
+      if (lower_height_ < y && y < upper_height_ && lower_range_ < range &&
+          range < upper_range_ && range < (*ranges)[u])
         (*ranges)[u] = range;
     }
   }
@@ -62,8 +62,7 @@ void DepthToScan::initialize_coefficient() {
       auto y = -x_cam;
       z = -(y_cam * c_pitch - z_cam * s_pitch);
       range = sqrt(x * x + y * y);
-      if (v == int(height_ / 2))
-        (*angles_)[u] = atan2(y, x);
+      if (v == int(height_ / 2)) (*angles_)[u] = atan2(y, x);
     }
   }
 }

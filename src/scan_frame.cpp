@@ -37,8 +37,7 @@ ScanFrame::ScanFrame(const double &timestamp,
       translation_(translation),
       rotation_(rotation),
       angles_(angles),
-      ranges_(ranges) {
-}
+      ranges_(ranges) {}
 
 void ScanFrame::transformed_scan(std::vector<Eigen::Vector2d> &points) {
   Eigen::Matrix2d rot_matrix;

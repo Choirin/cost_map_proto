@@ -1,9 +1,6 @@
 <launch>
   <arg name="rosbag" default="/media/psf/Home/data/test.bag" />
 
-  <node pkg="rosbag" type="play" name="player"
-        args="--clock $(arg rosbag)"
-        required="true" />
 
   <node pkg="cost_map_proto" type="cost_map_proto_node" name="cost_map_proto_node" output="screen" />
 

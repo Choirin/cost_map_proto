@@ -1,27 +1,26 @@
 #pragma once
 #ifndef __INCLUDE_SCAN_FRAME__
 #define __INCLUDE_SCAN_FRAME__
-#include <memory>
+#include <Eigen/Geometry>
 #include <algorithm>
 #include <iterator>
+#include <memory>
 #include <vector>
 
-#include <Eigen/Geometry>
+namespace frame_buffer {
 
-namespace frame_buffer
-{
-
-class ScanFrame
-{
-public:
+class ScanFrame {
+ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   ScanFrame(const double &timestamp, const Eigen::Matrix3d &pose,
             const std::shared_ptr<std::vector<float>> &angles,
             const std::vector<float> &ranges);
-  ScanFrame(const double &timestamp, const Eigen::Vector2d &translation, const double &rotation,
+  ScanFrame(const double &timestamp, const Eigen::Vector2d &translation,
+            const double &rotation,
             const std::shared_ptr<std::vector<float>> &angles,
             const std::vector<float> &ranges);
-  ScanFrame(const double &timestamp, const Eigen::Vector2d &translation, const double &rotation,
+  ScanFrame(const double &timestamp, const Eigen::Vector2d &translation,
+            const double &rotation,
             const std::shared_ptr<std::vector<float>> &angles,
             const std::shared_ptr<std::vector<float>> &ranges);
   ~ScanFrame() {}
@@ -30,8 +29,8 @@ public:
   std::shared_ptr<std::vector<float>> angles() { return angles_; }
   std::shared_ptr<std::vector<float>> ranges() { return ranges_; }
 
-  const Eigen::Vector2d &translation() const{ return translation_; }
-  const double &rotation() const{ return rotation_; }
+  const Eigen::Vector2d &translation() const { return translation_; }
+  const double &rotation() const { return rotation_; }
 
   double *mutable_translation() { return translation_.data(); }
   double *mutable_rotation() { return &rotation_; }
@@ -40,16 +39,15 @@ public:
 
   void transformed_scan(std::vector<Eigen::Vector2d> &points);
 
-private:
+ private:
   double timestamp_;
   Eigen::Vector2d translation_;
   double rotation_;
 
   std::shared_ptr<std::vector<float>> angles_;
   std::shared_ptr<std::vector<float>> ranges_;
-
 };
 
-} // namespace frame_buffer
+}  // namespace frame_buffer
 
-#endif // __INCLUDE_SCAN_FRAME__
+#endif  // __INCLUDE_SCAN_FRAME__

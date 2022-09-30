@@ -1,25 +1,23 @@
 #pragma once
 #ifndef __INCLUDE_COST_MAP_SCAN__
 #define __INCLUDE_COST_MAP_SCAN__
+#include <Eigen/Geometry>
 #include <algorithm>
 #include <cmath>
+#include <cost_map/cost_map.hpp>
+#include <frame_buffer/scan_frame.hpp>
 #include <iostream>
 #include <iterator>
 #include <memory>
+#include <opencv2/core/eigen.hpp>
+#include <opencv2/opencv.hpp>
 #include <type_traits>
 #include <vector>
-
-#include <Eigen/Geometry>
-#include <opencv2/opencv.hpp>
-#include <opencv2/core/eigen.hpp>
-
-#include <frame_buffer/scan_frame.hpp>
-#include <cost_map/cost_map.hpp>
 
 namespace cost_map {
 
 class CostMapScan : public CostMap {
-public:
+ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   CostMapScan()
       : sensor_model_initial_(sensor_model(0.5)),
@@ -71,20 +69,20 @@ public:
       // TODO: check range
       world_to_map(point, ray_m);
       if (!is_inside("free", ray_m)) continue;
-      bresenham(center_m, ray_m,
-                [this, &ray_m](const Eigen::Array2i &index) {
-                  if ((index == ray_m).all()) return false;
-                  miss("free", index);
-                  miss("cost", index);
-                  return true;
-                });
+      bresenham(center_m, ray_m, [this, &ray_m](const Eigen::Array2i &index) {
+        if ((index == ray_m).all()) return false;
+        miss("free", index);
+        miss("cost", index);
+        return true;
+      });
       hit("occupied", ray_m);
       hit("cost", ray_m);
     }
   }
 
   void save(const std::string &layer, const std::string &image_path) {
-    Eigen::Array<float, Eigen::Dynamic, Eigen::Dynamic> array = data(layer)->array();
+    Eigen::Array<float, Eigen::Dynamic, Eigen::Dynamic> array =
+        data(layer)->array();
     array = array.exp() / (1 + array.exp());
     Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic> data =
         ((array < 0.5).cast<uint8_t>() * 255 +
@@ -96,15 +94,17 @@ public:
     cv::imwrite(image_path, img);
   }
 
-private:
+ private:
   inline float sensor_model(const float raw) { return logf(raw / (1.0 - raw)); }
   void hit(const std::string &layer, const Eigen::Array2i &index) {
     at(layer, index) += sensor_model_hit_;
-    if (sensor_model_max_ < at(layer, index)) at(layer, index) = sensor_model_max_;
+    if (sensor_model_max_ < at(layer, index))
+      at(layer, index) = sensor_model_max_;
   }
   void miss(const std::string &layer, const Eigen::Array2i &index) {
     at(layer, index) += sensor_model_miss_;
-    if (at(layer, index) < sensor_model_min_) at(layer, index) = sensor_model_min_;
+    if (at(layer, index) < sensor_model_min_)
+      at(layer, index) = sensor_model_min_;
   }
 
   float sensor_model_initial_;

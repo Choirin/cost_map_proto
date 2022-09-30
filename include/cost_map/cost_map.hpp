@@ -1,23 +1,21 @@
 #pragma once
 #ifndef __INCLUDE_COST_MAP__
 #define __INCLUDE_COST_MAP__
+#include <Eigen/Geometry>
 #include <algorithm>
+#include <frame_buffer/scan_frame.hpp>
 #include <iostream>
 #include <iterator>
 #include <memory>
+#include <opencv2/core/eigen.hpp>
+#include <opencv2/opencv.hpp>
 #include <type_traits>
 #include <vector>
-
-#include <Eigen/Geometry>
-#include <opencv2/opencv.hpp>
-#include <opencv2/core/eigen.hpp>
-
-#include <frame_buffer/scan_frame.hpp>
 
 namespace cost_map {
 
 class CostMap {
-public:
+ public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   CostMap()
       : origin_(Eigen::Vector2d::Zero()),
@@ -31,8 +29,10 @@ public:
   void get_origin(Eigen::Vector2d &origin) { origin = origin_; }
   float get_resolution() { return resolution_; }
 
-  void resize(const Eigen::Array2i &size, const Eigen::Vector2d &origin, const float value) {
-    Eigen::Array2i offset_m = ((origin - origin_) / resolution_).cast<int>().array();
+  void resize(const Eigen::Array2i &size, const Eigen::Vector2d &origin,
+              const float value) {
+    Eigen::Array2i offset_m =
+        ((origin - origin_) / resolution_).cast<int>().array();
     // overlap on the original map coords
     Eigen::Array2i old_lb = offset_m.max(Eigen::Array2i::Zero());
     Eigen::Array2i old_rt = (offset_m + size).min(size_);
@@ -50,8 +50,9 @@ public:
     // overlap size
     Eigen::Array2i overlap_size = new_rt - new_lb;
     Eigen::Array2i overlap_size_ = old_rt - old_lb;
-    // std::cout << "new: " << overlap_size(0) << ", " << overlap_size(1) << std::endl;
-    // std::cout << "old: " << overlap_size_(0) << ", " << overlap_size_(1) << std::endl;
+    // std::cout << "new: " << overlap_size(0) << ", " << overlap_size(1) <<
+    // std::endl; std::cout << "old: " << overlap_size_(0) << ", " <<
+    // overlap_size_(1) << std::endl;
     assert((overlap_size == overlap_size_).all());
 
     // update geometry
@@ -59,29 +60,34 @@ public:
     origin_ = origin;
 
     // copy overlapped from the old data
-    for (const auto& layer : data_) {
-      auto data =
-          std::make_shared<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>>(
-              Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>::Constant(
-                  size(0), size(1), value));
+    for (const auto &layer : data_) {
+      auto data = std::make_shared<
+          Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>>(
+          Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>::Constant(
+              size(0), size(1), value));
       if ((overlap_size > Eigen::Array2i::Zero()).all()) {
         data->block(new_lb(0), new_lb(1), overlap_size(0), overlap_size(1)) =
-            data_[layer.first]->block(old_lb(0), old_lb(1), overlap_size(0), overlap_size(1));
+            data_[layer.first]->block(old_lb(0), old_lb(1), overlap_size(0),
+                                      overlap_size(1));
       }
       data_[layer.first] = data;
     }
   }
 
-  void extend(const Eigen::Vector2d &corner_lb, const Eigen::Vector2d &corner_rt, const float value) {
+  void extend(const Eigen::Vector2d &corner_lb,
+              const Eigen::Vector2d &corner_rt, const float value) {
     Eigen::Array2d new_corner_lb, new_corner_rt;
     if ((size_ == Eigen::Array2i::Zero()).any()) {
       new_corner_lb = (corner_lb.array() / resolution_).floor();
       new_corner_rt = (corner_rt.array() / resolution_).ceil();
     } else {
       Eigen::Array2d old_corner_lb = origin_.array();
-      Eigen::Array2d old_corner_rt = origin_.array() + size_.cast<double>() * resolution_;
-      new_corner_lb = (corner_lb.array().min(old_corner_lb) / resolution_).floor();
-      new_corner_rt = (corner_rt.array().max(old_corner_rt) / resolution_).ceil();
+      Eigen::Array2d old_corner_rt =
+          origin_.array() + size_.cast<double>() * resolution_;
+      new_corner_lb =
+          (corner_lb.array().min(old_corner_lb) / resolution_).floor();
+      new_corner_rt =
+          (corner_rt.array().max(old_corner_rt) / resolution_).ceil();
     }
     Eigen::Vector2d origin = (new_corner_lb * resolution_).matrix();
     Eigen::Array2i size = (new_corner_rt - new_corner_lb + 0.5).cast<int>();
@@ -106,23 +112,26 @@ public:
     data_[layer] = data;
   }
 
-  inline void world_to_map(const Eigen::Vector2d &position_w, Eigen::Array2i &index_m) const{
+  inline void world_to_map(const Eigen::Vector2d &position_w,
+                           Eigen::Array2i &index_m) const {
     Eigen::Vector2d position_m =
         (position_w - origin_) / resolution_ + Eigen::Vector2d::Constant(0.5);
     index_m = position_m.array().floor().cast<int>();
   }
 
-  inline void map_to_world(const Eigen::Array2i &index_m, Eigen::Vector2d &position_w) const{
+  inline void map_to_world(const Eigen::Array2i &index_m,
+                           Eigen::Vector2d &position_w) const {
     position_w = index_m.matrix().cast<double>() * resolution_ + origin_;
   }
 
   inline bool is_inside(const std::string &layer, const Eigen::Array2i &index) {
     auto &data = data_[layer];
-    return (0 <= index(0) && index(0) < data->rows() &&
-            0 <= index(1) && index(1) < data->cols());
+    return (0 <= index(0) && index(0) < data->rows() && 0 <= index(1) &&
+            index(1) < data->cols());
   }
 
-  std::shared_ptr<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>> data(const std::string &layer) {
+  std::shared_ptr<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>> data(
+      const std::string &layer) {
     return data_[layer];
   }
 
@@ -141,10 +150,10 @@ public:
     cv::imwrite(image_path, img);
   }
 
-protected:
+ protected:
   template <typename ActionType>
   inline void bresenham(const Eigen::Array2i &a, const Eigen::Array2i &b,
-                        ActionType action) const{
+                        ActionType action) const {
     static_assert(
         std::is_same<std::invoke_result_t<ActionType, const Eigen::Array2i &>,
                      bool>::value,
@@ -171,8 +180,11 @@ protected:
     }
   }
 
-private:
-  std::unordered_map<std::string, std::shared_ptr<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>>> data_;
+ private:
+  std::unordered_map<
+      std::string,
+      std::shared_ptr<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>>>
+      data_;
   Eigen::Vector2d origin_;
   Eigen::Array2i size_;
   float resolution_;
