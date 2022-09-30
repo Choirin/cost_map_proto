@@ -37,7 +37,7 @@ class ScanFrameBufferNode {
   std::mutex mtx_;
 
  public:
-  ScanFrameBufferNode() : it_(nh_), frame_size_(20), odom_frame_("map") {
+  ScanFrameBufferNode() : it_(nh_), frame_size_(20), odom_frame_("odom") {
     depth_to_scan_ = std::make_unique<DepthToScan>(
         224, 172, 195.26491142934, 195.484689318979, 111.31867165296,
         86.8194913656314, 1000.0);
@@ -77,8 +77,8 @@ class ScanFrameBufferNode {
     try {
       tf::StampedTransform transform;
       // std::string frame_id = msg->header.frame_id;
-      std::string frame_id = "depth_base";
-      tf_.lookupTransform(odom_frame_, frame_id, ros::Time(0), transform);
+      std::string frame_id = "laser";
+      tf_.lookupTransform(odom_frame_, frame_id, msg->header.stamp, transform);
       translation << transform.getOrigin().getX(), transform.getOrigin().getY();
       yaw = tf::getYaw(transform.getRotation());
     } catch (const tf::TransformException &ex) {
@@ -90,7 +90,7 @@ class ScanFrameBufferNode {
       // insert a frame, if there is a large difference in distance or angle
       auto d_translation = frames_.back()->translation() - translation;
       auto d_rotation = fmod(fabs(frames_.back()->rotation() - yaw), M_PI);
-      if (d_translation.norm() < 0.2 && d_rotation < 0.1) {
+      if (d_translation.norm() < 0.2 && d_rotation < 0.05) {
         return;
       }
     }
@@ -118,9 +118,13 @@ class ScanFrameBufferNode {
     std::vector<Eigen::Vector2d> points;
     size_t idx = 0;
 
+    cost_map::CostMapScan cost_map;
+    cost_map.set_scan_range_max(1.9);
+
     mtx_.lock();
     for (auto frame : frames_) {
       frame->transformed_scan(points);
+      cost_map.update(frame);
 
       point_cloud->width += points.size();
       point_cloud->points.resize(point_cloud->width);
@@ -132,6 +136,9 @@ class ScanFrameBufferNode {
       }
     }
     mtx_.unlock();
+
+    if (frames_.size() != 0)
+      cost_map.save("cost", "/tmp/cost_buffer.png");
 
     point_cloud->header.frame_id = odom_frame_;
     pcl_conversions::toPCL(ros::Time::now(), point_cloud->header.stamp);

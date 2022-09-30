@@ -166,7 +166,8 @@ class CostMap {
     int err = dx + dy, e2; /* error value e_xy */
 
     for (;;) { /* loop */
-      action(index);
+      if ((index < 0).any() || (index >= size_).any()) break;
+      if (!action(index)) break;
       if (xa == xb && ya == yb) break;
       e2 = 2 * err;
       if (e2 >= dy) {
