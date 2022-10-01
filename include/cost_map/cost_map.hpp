@@ -21,6 +21,9 @@ class CostMap {
       : origin_(Eigen::Vector2d::Zero()),
         size_(Eigen::Array2i::Zero()),
         resolution_(0.05) {}
+  CostMap(const Eigen::Vector2d &origin, const Eigen::Array2i &size,
+          const float resolution)
+      : origin_(origin), size_(size), resolution_(resolution) {}
   ~CostMap() {}
 
   void set_origin(const Eigen::Vector2d &origin) { origin_ = origin; }
@@ -155,9 +158,9 @@ class CostMap {
   inline void bresenham(const Eigen::Array2i &a, const Eigen::Array2i &b,
                         ActionType action) const {
     static_assert(
-        std::is_same<std::invoke_result_t<ActionType, const Eigen::Array2i &>,
+        std::is_same<std::invoke_result_t<ActionType, const Eigen::Array2i &, const bool &>,
                      bool>::value,
-        "Expected functor-type bool(const Eige::Array2i &)");
+        "Expected functor-type bool(const Eige::Array2i &, const bool &)");
     Eigen::Array2i index = a;
     auto &xa = index.data()[0], &ya = index.data()[1];
     auto &xb = b.data()[0], &yb = b.data()[1];
@@ -166,8 +169,9 @@ class CostMap {
     int err = dx + dy, e2; /* error value e_xy */
 
     for (;;) { /* loop */
-      if ((index < 0).any() || (index >= size_).any()) break;
-      if (!action(index)) break;
+      const bool is_inside = (0 <= index).all() && (index < size_).all();
+      if (!is_inside) std::cerr << "bresenham: index out of range" << std::endl;
+      if (!action(index, is_inside)) break;
       if (xa == xb && ya == yb) break;
       e2 = 2 * err;
       if (e2 >= dy) {

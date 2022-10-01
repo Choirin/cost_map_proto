@@ -71,6 +71,14 @@ target_link_libraries(scan_buffer_node
   ${catkin_LIBRARIES}
 )
 
+add_executable(test_scan_buffer_node
+  src/test_scan_buffer_node.cpp
+)
+target_link_libraries(test_scan_buffer_node
+  ${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+)
+
 #############
 ## Install ##
 #############

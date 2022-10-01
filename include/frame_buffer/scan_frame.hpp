@@ -38,6 +38,8 @@ class ScanFrame {
   // void get_pose(Eigen::Matrix3d &pose);
 
   void transformed_scan(std::vector<Eigen::Vector2d> &points);
+  void transformed_scan(std::vector<Eigen::Vector2d> &points,
+                        const Eigen::Matrix3d &external_transform);
 
  private:
   double timestamp_;

@@ -54,4 +54,22 @@ void ScanFrame::transformed_scan(std::vector<Eigen::Vector2d> &points) {
   }
 }
 
+void ScanFrame::transformed_scan(std::vector<Eigen::Vector2d> &points,
+                                 const Eigen::Matrix3d &external_transform) {
+  Eigen::Matrix2d rot_matrix;
+  rot_matrix << cos(rotation_), -sin(rotation_), sin(rotation_), cos(rotation_);
+  const size_t size = ranges_->size();
+  points.clear();
+  points.reserve(size);
+  for (size_t i = 0; i < size; ++i) {
+    Eigen::Vector2d point;
+    point << (*ranges_)[i] * cos((*angles_)[i]),
+        (*ranges_)[i] * sin((*angles_)[i]);
+    point = rot_matrix * point + translation_;
+    point = external_transform.block<2, 2>(0, 0) * point +
+            external_transform.block<2, 1>(0, 2);
+    points.emplace_back(point);
+  }
+}
+
 }  // namespace frame_buffer

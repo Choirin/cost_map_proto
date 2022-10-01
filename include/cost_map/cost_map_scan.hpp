@@ -30,6 +30,19 @@ class CostMapScan : public CostMap {
     add("occupied", sensor_model_initial_);
     add("cost", sensor_model_initial_);
   }
+  CostMapScan(const Eigen::Vector2d &origin, const Eigen::Array2i &size,
+              const float resolution)
+      : CostMap(origin, size, resolution),
+        sensor_model_initial_(sensor_model(0.5)),
+        sensor_model_hit_(sensor_model(0.7)),
+        sensor_model_miss_(sensor_model(0.4)),
+        sensor_model_min_(sensor_model(0.12)),
+        sensor_model_max_(sensor_model(0.97)),
+        scan_range_max_(INFINITY) {
+    add("free", sensor_model_initial_);
+    add("occupied", sensor_model_initial_);
+    add("cost", sensor_model_initial_);
+  }
   ~CostMapScan() {}
 
   void set_sensor_model_hit(const float hit) {
@@ -44,23 +57,24 @@ class CostMapScan : public CostMap {
   }
   void set_scan_range_max(const float max) { scan_range_max_ = max; }
 
-  void update(const std::shared_ptr<frame_buffer::ScanFrame> &scan) {
+  void update(const std::shared_ptr<frame_buffer::ScanFrame> &scan, const bool &extend_map = true) {
     const auto &translation = scan->translation();
     std::vector<Eigen::Vector2d> points;
     scan->transformed_scan(points);
 
-    // TODO: update map size
-    Eigen::Vector2d corner_lb = translation, corner_rt = translation;
-    for (size_t i = 0; i < scan->ranges()->size(); ++i) {
-      auto range = (*scan->ranges())[i];
-      if (scan_range_max_ < range) continue;
-      auto &point = points[i];
-      if (point(0) < corner_lb(0)) corner_lb(0) = point(0);
-      if (point(1) < corner_lb(1)) corner_lb(1) = point(1);
-      if (corner_rt(0) < point(0)) corner_rt(0) = point(0);
-      if (corner_rt(1) < point(1)) corner_rt(1) = point(1);
+    if (extend_map) {
+      Eigen::Vector2d corner_lb = translation, corner_rt = translation;
+      for (size_t i = 0; i < scan->ranges()->size(); ++i) {
+        auto range = (*scan->ranges())[i];
+        if (scan_range_max_ < range) continue;
+        auto &point = points[i];
+        if (point(0) < corner_lb(0)) corner_lb(0) = point(0);
+        if (point(1) < corner_lb(1)) corner_lb(1) = point(1);
+        if (corner_rt(0) < point(0)) corner_rt(0) = point(0);
+        if (corner_rt(1) < point(1)) corner_rt(1) = point(1);
+      }
+      extend(corner_lb, corner_rt, sensor_model_initial_);
     }
-    extend(corner_lb, corner_rt, sensor_model_initial_);
 
     Eigen::Array2i center_m, ray_m;
     world_to_map(translation, center_m);
@@ -69,12 +83,14 @@ class CostMapScan : public CostMap {
       // TODO: check range
       world_to_map(point, ray_m);
       if (!is_inside("free", ray_m)) continue;
-      bresenham(center_m, ray_m, [this, &ray_m](const Eigen::Array2i &index) {
-        if ((index == ray_m).all()) return false;
-        miss("free", index);
-        miss("cost", index);
-        return true;
-      });
+      bresenham(
+          center_m, ray_m,
+          [this, &ray_m](const Eigen::Array2i &index, const bool &is_inside) {
+            if (!is_inside || (index == ray_m).all()) return true;
+            miss("free", index);
+            miss("cost", index);
+            return true;
+          });
       hit("occupied", ray_m);
       hit("cost", ray_m);
     }
