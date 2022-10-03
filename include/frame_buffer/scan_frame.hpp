@@ -19,10 +19,6 @@ class ScanFrame {
             const double &rotation,
             const std::shared_ptr<Eigen::VectorXd> &angles,
             const Eigen::VectorXd &ranges);
-  // ScanFrame(const double &timestamp, const Eigen::Vector2d &translation,
-  //           const double &rotation,
-  //           const std::shared_ptr<Eigen::VectorXd> &angles,
-  //           const std::shared_ptr<Eigen::VectorXd> &ranges);
   ~ScanFrame() {}
 
   double timestamp() { return timestamp_; }
@@ -37,8 +33,8 @@ class ScanFrame {
 
   // void get_pose(Eigen::Matrix3d &pose);
 
-  void transformed_scan(std::vector<Eigen::Vector2d> &points);
-  void transformed_scan(std::vector<Eigen::Vector2d> &points,
+  void transformed_scan(Eigen::Matrix2Xd &points);
+  void transformed_scan(Eigen::Matrix2Xd &points,
                         const Eigen::Matrix3d &external_transform);
 
  private:
