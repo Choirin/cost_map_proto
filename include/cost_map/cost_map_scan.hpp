@@ -99,7 +99,7 @@ class CostMapScan : public CostMap {
 
   void save(const std::string &layer, const std::string &image_path) {
     Eigen::Array<float, Eigen::Dynamic, Eigen::Dynamic> array =
-        data(layer)->array();
+        data(layer).array();
     array = array.exp() / (1 + array.exp());
     Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic> data =
         ((array < 0.5).cast<uint8_t>() * 255 +
