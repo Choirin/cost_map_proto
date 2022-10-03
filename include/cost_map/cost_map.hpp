@@ -155,7 +155,7 @@ class CostMap {
 
  protected:
   template <typename ActionType>
-  inline void bresenham(const Eigen::Array2i &a, const Eigen::Array2i &b,
+  inline bool bresenham(const Eigen::Array2i &a, const Eigen::Array2i &b,
                         ActionType action) const {
     static_assert(
         std::is_same<std::invoke_result_t<ActionType, const Eigen::Array2i &, const bool &>,
@@ -170,8 +170,8 @@ class CostMap {
 
     for (;;) { /* loop */
       const bool is_inside = (0 <= index).all() && (index < size_).all();
-      if (!is_inside) std::cerr << "bresenham: index out of range" << std::endl;
-      if (!action(index, is_inside)) break;
+      // if (!is_inside) std::cerr << "bresenham: index out of range" << std::endl;
+      if (!action(index, is_inside)) return false;
       if (xa == xb && ya == yb) break;
       e2 = 2 * err;
       if (e2 >= dy) {
@@ -183,6 +183,7 @@ class CostMap {
         ya += sy;
       } /* e_xy+e_y < 0 */
     }
+    return true;
   }
 
  private:

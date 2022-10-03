@@ -107,6 +107,7 @@ class CostMapScan : public CostMap {
             .matrix();
     cv::Mat img;
     eigen2cv(data, img);
+    cv::flip(img, img, 0);
     cv::imwrite(image_path, img);
   }
 
