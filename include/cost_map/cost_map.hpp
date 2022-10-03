@@ -14,11 +14,13 @@
 
 namespace cost_map {
 
-using MapType = Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>;
-
+template <typename T>
 class CostMap {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  using CellType = T;
+  using MapType = Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>;
+
   CostMap()
       : origin_(Eigen::Vector2d::Zero()),
         size_(Eigen::Array2i::Zero()),
@@ -31,11 +33,11 @@ class CostMap {
   void set_origin(const Eigen::Vector2d &origin) { origin_ = origin; }
   void set_size(const Eigen::Array2i &size) { size_ = size; }
 
-  void get_origin(Eigen::Vector2d &origin) { origin = origin_; }
-  float get_resolution() { return resolution_; }
+  void get_origin(Eigen::Vector2d &origin) const { origin = origin_; }
+  float get_resolution() const { return resolution_; }
 
   void resize(const Eigen::Array2i &size, const Eigen::Vector2d &origin,
-              const float value) {
+              const CellType value) {
     Eigen::Array2i offset_m =
         ((origin - origin_) / resolution_).cast<int>().array();
     // overlap on the original map coords
@@ -78,7 +80,7 @@ class CostMap {
   }
 
   void extend(const Eigen::Vector2d &corner_lb,
-              const Eigen::Vector2d &corner_rt, const float value) {
+              const Eigen::Vector2d &corner_rt, const CellType value) {
     Eigen::Array2d new_corner_lb, new_corner_rt;
     if ((size_ == Eigen::Array2i::Zero()).any()) {
       new_corner_lb = (corner_lb.array() / resolution_).floor();
@@ -99,9 +101,13 @@ class CostMap {
     resize(size, origin, value);
   }
 
-  void add(const std::string &layer, const float value) {
+  void add(const std::string &layer, const CellType value) {
     data_[layer] = std::unique_ptr<MapType>(new MapType);
     *data_[layer] = MapType::Constant(size_(0), size_(1), value);
+  }
+
+  void add(const std::string &layer, std::unique_ptr<MapType> data) {
+    data_[layer] = std::move(data);
   }
 
   inline void world_to_map(const Eigen::Vector2d &position_w,
@@ -124,19 +130,11 @@ class CostMap {
 
   MapType &data(const std::string &layer) { return *data_[layer]; }
 
-  float &at(const std::string &layer, const Eigen::Array2i &index) {
+  CellType &at(const std::string &layer, const Eigen::Array2i &index) {
     auto &data = data_[layer];
     assert(0 <= index(0) && index(0) < data->rows());
     assert(0 <= index(1) && index(1) < data->cols());
     return (*data)(index(0), index(1));
-  }
-
-  void save(const std::string &layer, const std::string &image_path) {
-    Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic> data =
-        (*data_[layer] * 255).cast<uint8_t>();
-    cv::Mat img;
-    eigen2cv(data, img);
-    cv::imwrite(image_path, img);
   }
 
  protected:

@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __INCLUDE_COST_MAP_SCAN__
-#define __INCLUDE_COST_MAP_SCAN__
+#ifndef COST_MAP_COST_MAP_SCAN_HPP
+#define COST_MAP_COST_MAP_SCAN_HPP
 #include <Eigen/Geometry>
 #include <algorithm>
 #include <cmath>
@@ -16,7 +16,7 @@
 
 namespace cost_map {
 
-class CostMapScan : public CostMap {
+class CostMapScan : public CostMap<float> {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   CostMapScan()
@@ -135,4 +135,4 @@ class CostMapScan : public CostMap {
 
 }  // namespace cost_map
 
-#endif  // __INCLUDE_COST_MAP_SCAN__
+#endif  // COST_MAP_COST_MAP_SCAN_HPP

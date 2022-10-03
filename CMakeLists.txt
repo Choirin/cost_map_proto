@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(cost_map_proto)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
-set(CMAKE_CXX_FLAGS "-Wall")
+set(CMAKE_CXX_FLAGS "-Wall --std=c++17")
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g3")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2 -Werror")
 
@@ -19,6 +19,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(Eigen3 REQUIRED)
 find_package(OpenCV REQUIRED)
+find_package(yaml-cpp 0.5 REQUIRED)
 
 ###################################
 ## catkin specific configuration ##
@@ -38,11 +39,13 @@ include_directories(
   include
   ${EIGEN3_INCLUDE_DIR}
   ${OpenCV_INCLUDE_DIRS}
+  ${YAML_CPP_INCLUDE_DIR}
   ${catkin_INCLUDE_DIRS}
 )
 
 set(SOURCES
   src/scan_frame.cpp
+  src/occupancy_grid.cpp
   src/depth_to_scan.cpp
 )
 
@@ -52,6 +55,7 @@ add_library(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
   ${OpenCV_LIBS}
+  ${YAML_CPP_LIBRARIES}
   ${catkin_LIBRARIES}
 )
 
@@ -75,6 +79,14 @@ add_executable(test_scan_buffer_node
   src/test_scan_buffer_node.cpp
 )
 target_link_libraries(test_scan_buffer_node
+  ${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+)
+
+add_executable(main
+  src/main.cpp
+)
+target_link_libraries(main
   ${PROJECT_NAME}
   ${catkin_LIBRARIES}
 )
