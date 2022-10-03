@@ -158,9 +158,9 @@ class CostMap {
   inline bool bresenham(const Eigen::Array2i &a, const Eigen::Array2i &b,
                         ActionType action) const {
     static_assert(
-        std::is_same<std::invoke_result_t<ActionType, const Eigen::Array2i &, const bool &>,
+        std::is_same<std::invoke_result_t<ActionType, const Eigen::Array2i &>,
                      bool>::value,
-        "Expected functor-type bool(const Eige::Array2i &, const bool &)");
+        "Expected functor-type bool(const Eige::Array2i &)");
     Eigen::Array2i index = a;
     auto &xa = index.data()[0], &ya = index.data()[1];
     auto &xb = b.data()[0], &yb = b.data()[1];
@@ -169,9 +169,7 @@ class CostMap {
     int err = dx + dy, e2; /* error value e_xy */
 
     for (;;) { /* loop */
-      const bool is_inside = (0 <= index).all() && (index < size_).all();
-      // if (!is_inside) std::cerr << "bresenham: index out of range" << std::endl;
-      if (!action(index, is_inside)) return false;
+      if (!action(index)) return false;
       if (xa == xb && ya == yb) break;
       e2 = 2 * err;
       if (e2 >= dy) {

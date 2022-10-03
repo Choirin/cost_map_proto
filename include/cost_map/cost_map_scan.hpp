@@ -82,15 +82,15 @@ class CostMapScan : public CostMap {
     for (const auto &point : points) {
       // TODO: check range
       world_to_map(point, ray_m);
-      if (!is_inside("free", ray_m)) continue;
       bresenham(
           center_m, ray_m,
-          [this, &ray_m](const Eigen::Array2i &index, const bool &is_inside) {
-            if (!is_inside || (index == ray_m).all()) return true;
+          [this, &ray_m](const Eigen::Array2i &index) {
+            if (!this->is_inside("free", index) || (index == ray_m).all()) return true;
             miss("free", index);
             miss("cost", index);
             return true;
           });
+      if (!is_inside("free", ray_m)) continue;
       hit("occupied", ray_m);
       hit("cost", ray_m);
     }
