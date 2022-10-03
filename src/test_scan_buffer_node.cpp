@@ -70,20 +70,22 @@ int main(int argc, char *argv[]) {
 
   ScanFrameBuffer frame_buffer(angles);
 
-  double x = 3.0, y = 0.0, yaw = 0.0;
-  for (int i = 0; i < 100; i++) {
+  const double radius = 3.0;
+  const double speed = 0.05;
+  const double yaw_rate = -speed / radius;
+  double x = 0.0, y = 3.0, yaw = 0.0;
+  for (double timestamp = 0; timestamp < 2 * M_PI / abs(yaw_rate); timestamp += 0.1) {
     std::vector<float> ranges(kScanLength);
 
-    for (int j = 0; j < kScanLength; j++) {
-      ranges[j] = 1.0 / cos((*angles)[j]);
+    for (int i = 0; i < kScanLength; i++) {
+      ranges[i] = 1.0 / cos((*angles)[i]);
     }
 
     frame_buffer.update(0.0, ranges, Eigen::Vector2d(x, y), yaw);
 
-    const float speed = 0.05;
     x += speed * cos(yaw);
     y += speed * sin(yaw);
-    yaw += 0.01;
+    yaw += yaw_rate;
   }
 
   frame_buffer.project();
