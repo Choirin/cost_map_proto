@@ -96,9 +96,11 @@ class ScanFrameBufferNode {
     }
 
     mtx_.lock();
+    Eigen::VectorXd ranges;
+    depth_to_scan_->convert(cv_ptr->image, ranges);
     frames_.emplace_back(new frame_buffer::ScanFrame(
         msg->header.stamp.toSec(), translation, yaw, depth_to_scan_->angles(),
-        depth_to_scan_->convert(cv_ptr->image)));
+        ranges));
     if (frames_.size() > frame_size_) frames_.pop_front();
     std::cout << "new frame inserted. " << frames_.size() << std::endl;
 
@@ -115,7 +117,6 @@ class ScanFrameBufferNode {
     point_cloud->width = 0;
     point_cloud->height = 1;
 
-    std::vector<Eigen::Vector2d> points;
     size_t idx = 0;
 
     cost_map::CostMapScan cost_map;
@@ -123,15 +124,16 @@ class ScanFrameBufferNode {
 
     mtx_.lock();
     for (auto frame : frames_) {
+      Eigen::Matrix2Xd points;
       frame->transformed_scan(points);
       cost_map.update(frame);
 
-      point_cloud->width += points.size();
+      point_cloud->width += points.cols();
       point_cloud->points.resize(point_cloud->width);
-      for (size_t i = 0; i < points.size(); ++i, ++idx) {
+      for (int i = 0; i < points.cols(); ++i, ++idx) {
         pcl::PointXYZ &point = point_cloud->points[idx];
-        point.x = points[i](0);
-        point.y = points[i](1);
+        point.x = points(i, 0);
+        point.y = points(i, 1);
         point.z = 0.0;
       }
     }

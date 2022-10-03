@@ -59,15 +59,15 @@ class CostMapScan : public CostMap {
 
   void update(const std::shared_ptr<frame_buffer::ScanFrame> &scan, const bool &extend_map = true) {
     const auto &translation = scan->translation();
-    std::vector<Eigen::Vector2d> points;
+    Eigen::Matrix2Xd points;
     scan->transformed_scan(points);
 
     if (extend_map) {
       Eigen::Vector2d corner_lb = translation, corner_rt = translation;
-      for (size_t i = 0; i < scan->ranges()->size(); ++i) {
-        auto range = (*scan->ranges())[i];
+      for (int i = 0; i < scan->ranges().size(); ++i) {
+        auto range = scan->ranges()[i];
         if (scan_range_max_ < range) continue;
-        auto &point = points[i];
+        auto &&point = points.col(i);
         if (point(0) < corner_lb(0)) corner_lb(0) = point(0);
         if (point(1) < corner_lb(1)) corner_lb(1) = point(1);
         if (corner_rt(0) < point(0)) corner_rt(0) = point(0);
@@ -79,9 +79,10 @@ class CostMapScan : public CostMap {
     Eigen::Array2i center_m, ray_m;
     world_to_map(translation, center_m);
     if (!is_inside("free", center_m)) return;
-    for (const auto &point : points) {
+    for (int i = 0; i < points.cols(); ++i) {
+    // for (const auto &point : points) {
       // TODO: check range
-      world_to_map(point, ray_m);
+      world_to_map(points.col(i), ray_m);
       bresenham(
           center_m, ray_m,
           [this, &ray_m](const Eigen::Array2i &index) {
@@ -98,7 +99,7 @@ class CostMapScan : public CostMap {
 
   void save(const std::string &layer, const std::string &image_path) {
     Eigen::Array<float, Eigen::Dynamic, Eigen::Dynamic> array =
-        data(layer)->array();
+        data(layer).array();
     array = array.exp() / (1 + array.exp());
     Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic> data =
         ((array < 0.5).cast<uint8_t>() * 255 +

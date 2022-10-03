@@ -14,6 +14,8 @@
 
 namespace cost_map {
 
+using MapType = Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>;
+
 class CostMap {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -64,16 +66,14 @@ class CostMap {
 
     // copy overlapped from the old data
     for (const auto &layer : data_) {
-      auto data = std::make_shared<
-          Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>>(
-          Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>::Constant(
-              size(0), size(1), value));
+      auto data = std::unique_ptr<MapType>(new MapType);
+      *data = MapType::Constant(size(0), size(1), value);
       if ((overlap_size > Eigen::Array2i::Zero()).all()) {
         data->block(new_lb(0), new_lb(1), overlap_size(0), overlap_size(1)) =
             data_[layer.first]->block(old_lb(0), old_lb(1), overlap_size(0),
                                       overlap_size(1));
       }
-      data_[layer.first] = data;
+      data_[layer.first] = std::move(data);
     }
   }
 
@@ -100,19 +100,8 @@ class CostMap {
   }
 
   void add(const std::string &layer, const float value) {
-    data_[layer] =
-        std::make_shared<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>>(
-            Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>::Constant(
-                size_(0), size_(1), value));
-  }
-
-  void add(const std::string &layer,
-           const std::shared_ptr<
-               Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>>
-               data) {
-    assert(size_(0) == data->rows());
-    assert(size_(1) == data->cols());
-    data_[layer] = data;
+    data_[layer] = std::unique_ptr<MapType>(new MapType);
+    *data_[layer] = MapType::Constant(size_(0), size_(1), value);
   }
 
   inline void world_to_map(const Eigen::Vector2d &position_w,
@@ -133,10 +122,7 @@ class CostMap {
             index(1) < data->cols());
   }
 
-  std::shared_ptr<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>> data(
-      const std::string &layer) {
-    return data_[layer];
-  }
+  MapType &data(const std::string &layer) { return *data_[layer]; }
 
   float &at(const std::string &layer, const Eigen::Array2i &index) {
     auto &data = data_[layer];
@@ -185,10 +171,7 @@ class CostMap {
   }
 
  private:
-  std::unordered_map<
-      std::string,
-      std::shared_ptr<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic>>>
-      data_;
+  std::unordered_map<std::string, std::unique_ptr<MapType>> data_;
   Eigen::Vector2d origin_;
   Eigen::Array2i size_;
   float resolution_;
