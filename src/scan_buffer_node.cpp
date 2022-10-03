@@ -9,6 +9,9 @@
 
 #include "cost_map/cost_map_scan.hpp"
 #include "frame_buffer/scan_frame.hpp"
+#include "frame_buffer/scan_frame_buffer.hpp"
+
+const int kLaserScanSkip = 4;
 
 class ScanFrameBufferNode {
  public:
@@ -26,7 +29,8 @@ class ScanFrameBufferNode {
       tf::StampedTransform transform;
       std::string frame_id = msg.header.frame_id;
       // std::string frame_id = "laser";
-      tf_listener_.lookupTransform(odom_frame_, frame_id, msg.header.stamp, transform);
+      tf_listener_.lookupTransform(odom_frame_, frame_id, msg.header.stamp,
+                                   transform);
       translation << transform.getOrigin().getX(), transform.getOrigin().getY();
       yaw = tf::getYaw(transform.getRotation());
     } catch (const tf::TransformException &ex) {
@@ -34,66 +38,39 @@ class ScanFrameBufferNode {
       return;
     }
 
-    if (frames_.size() != 0) {
-      // insert a frame, if there is a large difference in distance or angle
-      auto d_translation = frames_.back()->translation() - translation;
-      auto d_rotation = fmod(fabs(frames_.back()->rotation() - yaw), M_PI);
-      if (d_translation.norm() < 0.3 && d_rotation < 0.5) {
-        return;
+    if (!buffer_) {
+      std::shared_ptr<Eigen::VectorXd> angles_ =
+          std::shared_ptr<Eigen::VectorXd>(
+              new Eigen::VectorXd(msg.ranges.size() / kLaserScanSkip));
+      for (size_t i = 0; i < msg.ranges.size() / kLaserScanSkip; ++i) {
+        (*angles_)[i] =
+            msg.angle_min + msg.angle_increment * i * kLaserScanSkip;
       }
+      buffer_ = std::make_unique<frame_buffer::ScanFrameBuffer>(
+          angles_, frame_size_, odom_frame_);
     }
 
-    {
-      std::lock_guard<std::mutex> lock(mtx_);
-      std::cout << msg.ranges.size() << std::endl;
-
-      const int skip = 4;
-
-      if (angles_ == nullptr) {
-        angles_ = std::shared_ptr<Eigen::VectorXd>(
-            new Eigen::VectorXd(msg.ranges.size() / skip));
-        for (size_t i = 0; i < msg.ranges.size() / skip; ++i) {
-          (*angles_)[i] = msg.angle_min + msg.angle_increment * i * skip;
-        }
-      }
-
-      Eigen::VectorXd ranges(msg.ranges.size() / skip);
-      for (size_t i = 0; i < msg.ranges.size() / skip; ++i) {
-        ranges[i] = msg.ranges[msg.ranges.size() - i * skip - 1];
-      }
-      frames_.emplace_back(new frame_buffer::ScanFrame(
-          msg.header.stamp.toSec(), translation, yaw, angles_, ranges));
-      if (frames_.size() > frame_size_) frames_.pop_front();
-      std::cout << "new frame inserted. " << frames_.size() << std::endl;
+    Eigen::VectorXd ranges(msg.ranges.size() / kLaserScanSkip);
+    for (size_t i = 0; i < msg.ranges.size() / kLaserScanSkip; ++i) {
+      ranges[i] = msg.ranges[msg.ranges.size() - i * kLaserScanSkip - 1];
     }
+    buffer_->update(msg.header.stamp.toSec(), ranges, translation, yaw);
   }
 
   void project(void) {
-    cost_map::CostMapScan cost_map;
-    cost_map.set_scan_range_max(1.9);
-
-    // lock using lock_guard
-    std::lock_guard<std::mutex> lock(mtx_);
-    for (auto frame : frames_) {
-      cost_map.update(frame);
-    }
-    if (frames_.size() != 0) cost_map.save("cost", "/tmp/cost_buffer.png");
+    if (!buffer_) return;
+    buffer_->project();
   }
 
- protected:
+ private:
   ros::NodeHandle nh_;
 
   ros::Subscriber laserscan_sub_;
   tf::TransformListener tf_listener_;
 
-  std::shared_ptr<Eigen::VectorXd> angles_;
-  size_t frame_size_;
-  std::deque<std::shared_ptr<frame_buffer::ScanFrame>> frames_;
-
-  std::string odom_frame_;
-
-  std::mutex mtx_;
-
+  const size_t frame_size_;
+  const std::string odom_frame_;
+  std::unique_ptr<frame_buffer::ScanFrameBuffer> buffer_;
 };
 
 int main(int argc, char *argv[]) {

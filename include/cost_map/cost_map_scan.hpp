@@ -65,7 +65,7 @@ class CostMapScan : public CostMap {
     if (extend_map) {
       Eigen::Vector2d corner_lb = translation, corner_rt = translation;
       for (int i = 0; i < scan->ranges().size(); ++i) {
-        auto range = scan->ranges()[i];
+        auto &range = scan->ranges()[i];
         if (scan_range_max_ < range) continue;
         auto &&point = points.col(i);
         if (point(0) < corner_lb(0)) corner_lb(0) = point(0);
@@ -80,8 +80,7 @@ class CostMapScan : public CostMap {
     world_to_map(translation, center_m);
     if (!is_inside("free", center_m)) return;
     for (int i = 0; i < points.cols(); ++i) {
-    // for (const auto &point : points) {
-      // TODO: check range
+      if (scan_range_max_ < scan->ranges()[i]) continue;
       world_to_map(points.col(i), ray_m);
       bresenham(
           center_m, ray_m,

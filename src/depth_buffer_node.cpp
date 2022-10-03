@@ -132,8 +132,8 @@ class ScanFrameBufferNode {
       point_cloud->points.resize(point_cloud->width);
       for (int i = 0; i < points.cols(); ++i, ++idx) {
         pcl::PointXYZ &point = point_cloud->points[idx];
-        point.x = points(i, 0);
-        point.y = points(i, 1);
+        point.x = points.col(i)[0];
+        point.y = points.col(i)[1];
         point.z = 0.0;
       }
     }
