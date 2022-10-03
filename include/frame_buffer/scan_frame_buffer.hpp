@@ -46,6 +46,26 @@ class ScanFrameBuffer {
     std::lock_guard<std::mutex> lock(mtx_);
     for (auto frame : frames_) cost_map.update(*frame, false);
     if (frames_.size() != 0) cost_map.save("cost", "./cost_buffer.png");
+
+    const Eigen::Array2i half_size(32, 32);
+    Eigen::Array2i center;
+    cost_map.world_to_map(Eigen::Vector2d(-3.0, 0.0), center);
+    cost_map::CostMapScan::MapType cropped;
+    if (cost_map.crop("cost", center - half_size, 2 * half_size, cropped)) {
+      Eigen::Array<float, Eigen::Dynamic, Eigen::Dynamic> array =
+          cropped.array();
+      array = array.exp() / (1 + array.exp());
+      Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic> data =
+          ((array < 0.196).cast<uint8_t>() * 255 +
+           (0.65 < array).cast<uint8_t>() * 0 +
+           (0.196 <= array && array <= 0.65).cast<uint8_t>() * 200)
+              .matrix();
+      cv::Mat image;
+      eigen2cv(data, image);
+      cv::flip(image, image, 0);
+      cv::imshow("cropped", image);
+      cv::waitKey(0);
+    }
   }
 
  protected:

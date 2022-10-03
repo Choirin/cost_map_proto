@@ -137,6 +137,14 @@ class CostMap {
     return (*data)(index(0), index(1));
   }
 
+  bool crop(const std::string &layer, const Eigen::Array2i &left_bottom,
+            const Eigen::Array2i size, MapType &value) {
+    if (!is_inside(layer, left_bottom) || !is_inside(layer, left_bottom + size))
+      return false;
+    value = data_[layer]->block(left_bottom(0), left_bottom(1), size(0), size(1));
+    return true;
+  }
+
  protected:
   template <typename ActionType>
   inline bool bresenham(const Eigen::Array2i &a, const Eigen::Array2i &b,

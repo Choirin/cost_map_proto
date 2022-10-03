@@ -83,10 +83,10 @@ target_link_libraries(test_scan_buffer_node
   ${catkin_LIBRARIES}
 )
 
-add_executable(main
-  src/main.cpp
+add_executable(test_occupancy_grid
+  src/test_occupancy_grid.cpp
 )
-target_link_libraries(main
+target_link_libraries(test_occupancy_grid
   ${PROJECT_NAME}
   ${catkin_LIBRARIES}
 )

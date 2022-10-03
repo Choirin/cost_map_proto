@@ -14,7 +14,7 @@ std::unique_ptr<OccupancyGrid> LoadOccupancyGridFromFile(
 void SaveOccupancyGridAsFile(const std::filesystem::path &map_yaml,
                              OccupancyGrid &cost_map);
 
-class OccupancyGrid : public CostMap<uint8_t> {
+class OccupancyGrid : public CostMap<float> {
  public:
   OccupancyGrid(std::unique_ptr<OccupancyGrid::MapType> data,
                 const Eigen::Vector2d &origin, const Eigen::Array2i &size,

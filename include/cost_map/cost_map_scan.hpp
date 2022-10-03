@@ -96,6 +96,7 @@ class CostMapScan : public CostMap<float> {
     }
   }
 
+  // for debug use only
   void save(const std::string &layer, const std::string &image_path) {
     Eigen::Array<float, Eigen::Dynamic, Eigen::Dynamic> array =
         data(layer).array();
