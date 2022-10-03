@@ -8,6 +8,7 @@
 
 class DepthToScan {
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   DepthToScan(int width, int height, double fx, double fy, double cx, double cy,
               double factor);
   ~DepthToScan() {}
@@ -24,8 +25,8 @@ class DepthToScan {
     optical_axis_pitch_ = optical_axis_pitch;
   }
 
-  std::shared_ptr<std::vector<float>> angles() { return angles_; }
-  std::shared_ptr<std::vector<float>> convert(const cv::Mat &depth_image);
+  std::shared_ptr<Eigen::VectorXd> angles() { return angles_; }
+  void convert(const cv::Mat &depth_image, Eigen::VectorXd &ranges);
 
  private:
   int width_;
@@ -35,7 +36,7 @@ class DepthToScan {
   double cx_;
   double cy_;
   double factor_;
-  std::vector<double> coeff_;
+  Eigen::VectorXd coeff_;
 
   double lower_height_;
   double upper_height_;
@@ -45,7 +46,7 @@ class DepthToScan {
 
   double optical_axis_pitch_;
 
-  std::shared_ptr<std::vector<float>> angles_;
+  std::shared_ptr<Eigen::VectorXd> angles_;
 
   void initialize_coefficient();
 };

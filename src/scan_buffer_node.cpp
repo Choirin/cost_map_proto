@@ -11,21 +11,8 @@
 #include "frame_buffer/scan_frame.hpp"
 
 class ScanFrameBufferNode {
- protected:
-  ros::NodeHandle nh_;
-
-  ros::Subscriber laserscan_sub_;
-  tf::TransformListener tf_listener_;
-
-  std::shared_ptr<std::vector<float>> angles_;
-  size_t frame_size_;
-  std::deque<std::shared_ptr<frame_buffer::ScanFrame>> frames_;
-
-  std::string odom_frame_;
-
-  std::mutex mtx_;
-
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   ScanFrameBufferNode() : frame_size_(32), odom_frame_("odom") {
     laserscan_sub_ =
         nh_.subscribe("/depth/scan", 1, &ScanFrameBufferNode::callback, this);
@@ -63,13 +50,14 @@ class ScanFrameBufferNode {
       const int skip = 4;
 
       if (angles_ == nullptr) {
-        angles_.reset(new std::vector<float>(msg.ranges.size() / skip));
+        angles_ = std::shared_ptr<Eigen::VectorXd>(
+            new Eigen::VectorXd(msg.ranges.size() / skip));
         for (size_t i = 0; i < msg.ranges.size() / skip; ++i) {
           (*angles_)[i] = msg.angle_min + msg.angle_increment * i * skip;
         }
       }
 
-      std::vector<float> ranges(msg.ranges.size() / skip);
+      Eigen::VectorXd ranges(msg.ranges.size() / skip);
       for (size_t i = 0; i < msg.ranges.size() / skip; ++i) {
         ranges[i] = msg.ranges[msg.ranges.size() - i * skip - 1];
       }
@@ -91,6 +79,21 @@ class ScanFrameBufferNode {
     }
     if (frames_.size() != 0) cost_map.save("cost", "/tmp/cost_buffer.png");
   }
+
+ protected:
+  ros::NodeHandle nh_;
+
+  ros::Subscriber laserscan_sub_;
+  tf::TransformListener tf_listener_;
+
+  std::shared_ptr<Eigen::VectorXd> angles_;
+  size_t frame_size_;
+  std::deque<std::shared_ptr<frame_buffer::ScanFrame>> frames_;
+
+  std::string odom_frame_;
+
+  std::mutex mtx_;
+
 };
 
 int main(int argc, char *argv[]) {

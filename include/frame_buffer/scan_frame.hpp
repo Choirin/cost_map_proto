@@ -13,21 +13,21 @@ class ScanFrame {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   ScanFrame(const double &timestamp, const Eigen::Matrix3d &pose,
-            const std::shared_ptr<std::vector<float>> &angles,
-            const std::vector<float> &ranges);
+            const std::shared_ptr<Eigen::VectorXd> &angles,
+            const Eigen::VectorXd &ranges);
   ScanFrame(const double &timestamp, const Eigen::Vector2d &translation,
             const double &rotation,
-            const std::shared_ptr<std::vector<float>> &angles,
-            const std::vector<float> &ranges);
-  ScanFrame(const double &timestamp, const Eigen::Vector2d &translation,
-            const double &rotation,
-            const std::shared_ptr<std::vector<float>> &angles,
-            const std::shared_ptr<std::vector<float>> &ranges);
+            const std::shared_ptr<Eigen::VectorXd> &angles,
+            const Eigen::VectorXd &ranges);
+  // ScanFrame(const double &timestamp, const Eigen::Vector2d &translation,
+  //           const double &rotation,
+  //           const std::shared_ptr<Eigen::VectorXd> &angles,
+  //           const std::shared_ptr<Eigen::VectorXd> &ranges);
   ~ScanFrame() {}
 
   double timestamp() { return timestamp_; }
-  std::shared_ptr<std::vector<float>> angles() { return angles_; }
-  std::shared_ptr<std::vector<float>> ranges() { return ranges_; }
+  std::shared_ptr<Eigen::VectorXd> angles() { return angles_; }
+  Eigen::VectorXd &ranges() { return ranges_; }
 
   const Eigen::Vector2d &translation() const { return translation_; }
   const double &rotation() const { return rotation_; }
@@ -46,8 +46,8 @@ class ScanFrame {
   Eigen::Vector2d translation_;
   double rotation_;
 
-  std::shared_ptr<std::vector<float>> angles_;
-  std::shared_ptr<std::vector<float>> ranges_;
+  std::shared_ptr<Eigen::VectorXd> angles_;
+  Eigen::VectorXd ranges_;
 };
 
 }  // namespace frame_buffer

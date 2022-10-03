@@ -17,10 +17,9 @@ DepthToScan::DepthToScan(int width, int height, double fx, double fy, double cx,
   initialize_coefficient();
 }
 
-std::shared_ptr<std::vector<float>> DepthToScan::convert(
-    const cv::Mat &depth_image) {
-  std::shared_ptr<std::vector<float>> ranges(
-      new std::vector<float>(width_, INFINITY));
+void DepthToScan::convert(const cv::Mat &depth_image,
+                          Eigen::VectorXd &ranges) {
+  ranges = Eigen::VectorXd::Constant(width_, INFINITY);
 
   // the image is upside down.
   auto pdepth = depth_image.ptr<uint16_t>(0) + height_ * width_ - 1;
@@ -31,15 +30,14 @@ std::shared_ptr<std::vector<float>> DepthToScan::convert(
       auto y = (*pdepth) * *(pcoeff++);
       // store minimum range with valid conditions
       if (lower_height_ < y && y < upper_height_ && lower_range_ < range &&
-          range < upper_range_ && range < (*ranges)[u])
-        (*ranges)[u] = range;
+          range < upper_range_ && range < ranges[u])
+        ranges[u] = range;
     }
   }
-  return ranges;
 }
 
 void DepthToScan::initialize_coefficient() {
-  angles_ = std::make_shared<std::vector<float>>(width_, 0);
+  angles_ = std::shared_ptr<Eigen::VectorXd>(new Eigen::VectorXd(width_));
 
   coeff_.resize(2 * width_ * height_);
   auto *pcoeff = coeff_.data();

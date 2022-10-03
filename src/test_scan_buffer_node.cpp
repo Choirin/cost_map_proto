@@ -7,20 +7,11 @@
 #include "frame_buffer/scan_frame.hpp"
 
 class ScanFrameBuffer {
- protected:
-  std::shared_ptr<std::vector<float>> angles_;
-  size_t frame_size_;
-  std::deque<std::shared_ptr<frame_buffer::ScanFrame>> frames_;
-
-  std::string odom_frame_;
-
-  std::mutex mtx_;
-
  public:
-  ScanFrameBuffer(const std::shared_ptr<std::vector<float>> angles)
+  ScanFrameBuffer(const std::shared_ptr<Eigen::VectorXd> angles)
       : angles_(angles), frame_size_(32), odom_frame_("odom") {}
 
-  void update(const double &timestamp, const std::vector<float> &ranges,
+  void update(const double &timestamp, const Eigen::VectorXd &ranges,
               const Eigen::Vector2d &translation, const double &yaw) {
     if (frames_.size() != 0) {
       // insert a frame, if there is a large difference in distance or angle
@@ -53,6 +44,15 @@ class ScanFrameBuffer {
     }
     if (frames_.size() != 0) cost_map.save("cost", "./cost_buffer.png");
   }
+
+ protected:
+  std::shared_ptr<Eigen::VectorXd> angles_;
+  size_t frame_size_;
+  std::deque<std::shared_ptr<frame_buffer::ScanFrame>> frames_;
+
+  std::string odom_frame_;
+
+  std::mutex mtx_;
 };
 
 int main(int argc, char *argv[]) {
@@ -62,8 +62,8 @@ int main(int argc, char *argv[]) {
   const double kMaxAngle = kFoV / 2.0;
   const double kAngleIncrement = (kMaxAngle - kMinAngle) / kScanLength;
 
-  std::shared_ptr<std::vector<float>> angles =
-      std::make_shared<std::vector<float>>(kScanLength);
+  std::shared_ptr<Eigen::VectorXd> angles =
+      std::make_shared<Eigen::VectorXd>(kScanLength);
   for (int i = 0; i < kScanLength; ++i) {
     (*angles)[i] = kMinAngle + kAngleIncrement * i;
   }
@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
   const double yaw_rate = -speed / radius;
   double x = 0.0, y = 3.0, yaw = 0.0;
   for (double timestamp = 0; timestamp < 2 * M_PI / abs(yaw_rate); timestamp += 0.1) {
-    std::vector<float> ranges(kScanLength);
+    Eigen::VectorXd ranges(kScanLength);
 
     for (int i = 0; i < kScanLength; i++) {
       ranges[i] = 1.0 / cos((*angles)[i]);

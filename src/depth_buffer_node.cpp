@@ -96,9 +96,11 @@ class ScanFrameBufferNode {
     }
 
     mtx_.lock();
+    Eigen::VectorXd ranges;
+    depth_to_scan_->convert(cv_ptr->image, ranges);
     frames_.emplace_back(new frame_buffer::ScanFrame(
         msg->header.stamp.toSec(), translation, yaw, depth_to_scan_->angles(),
-        depth_to_scan_->convert(cv_ptr->image)));
+        ranges));
     if (frames_.size() > frame_size_) frames_.pop_front();
     std::cout << "new frame inserted. " << frames_.size() << std::endl;
 

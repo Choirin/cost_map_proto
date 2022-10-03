@@ -64,10 +64,10 @@ class CostMapScan : public CostMap {
 
     if (extend_map) {
       Eigen::Vector2d corner_lb = translation, corner_rt = translation;
-      for (size_t i = 0; i < scan->ranges()->size(); ++i) {
-        auto range = (*scan->ranges())[i];
+      for (int i = 0; i < scan->ranges().size(); ++i) {
+        auto range = scan->ranges()[i];
         if (scan_range_max_ < range) continue;
-        auto &point = points[i];
+        const auto &point = points[i];
         if (point(0) < corner_lb(0)) corner_lb(0) = point(0);
         if (point(1) < corner_lb(1)) corner_lb(1) = point(1);
         if (corner_rt(0) < point(0)) corner_rt(0) = point(0);
