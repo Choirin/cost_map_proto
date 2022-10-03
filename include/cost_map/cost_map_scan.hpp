@@ -57,15 +57,15 @@ class CostMapScan : public CostMap {
   }
   void set_scan_range_max(const float max) { scan_range_max_ = max; }
 
-  void update(const std::shared_ptr<frame_buffer::ScanFrame> &scan, const bool &extend_map = true) {
-    const auto &translation = scan->translation();
+  void update(frame_buffer::ScanFrame &scan, const bool &extend_map = true) {
+    const auto &translation = scan.translation();
     Eigen::Matrix2Xd points;
-    scan->transformed_scan(points);
+    scan.transformed_scan(points);
 
     if (extend_map) {
       Eigen::Vector2d corner_lb = translation, corner_rt = translation;
-      for (int i = 0; i < scan->ranges().size(); ++i) {
-        auto &range = scan->ranges()[i];
+      for (int i = 0; i < scan.ranges().size(); ++i) {
+        auto &range = scan.ranges()[i];
         if (scan_range_max_ < range) continue;
         auto &&point = points.col(i);
         if (point(0) < corner_lb(0)) corner_lb(0) = point(0);
@@ -80,7 +80,7 @@ class CostMapScan : public CostMap {
     world_to_map(translation, center_m);
     if (!is_inside("free", center_m)) return;
     for (int i = 0; i < points.cols(); ++i) {
-      if (scan_range_max_ < scan->ranges()[i]) continue;
+      if (scan_range_max_ < scan.ranges()[i]) continue;
       world_to_map(points.col(i), ray_m);
       bresenham(
           center_m, ray_m,

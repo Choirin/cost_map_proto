@@ -85,7 +85,6 @@ int main(int argc, char *argv[]) {
   ros::Rate loop_rate(0.1);
   while (ros::ok()) {
     frame_buffer_node.project();
-    // ros::spinOnce();
     loop_rate.sleep();
   }
 

@@ -44,9 +44,7 @@ class ScanFrameBuffer {
 
     // lock using lock_guard
     std::lock_guard<std::mutex> lock(mtx_);
-    for (auto frame : frames_) {
-      cost_map.update(frame, false);
-    }
+    for (auto frame : frames_) cost_map.update(*frame, false);
     if (frames_.size() != 0) cost_map.save("cost", "./cost_buffer.png");
   }
 
