@@ -41,7 +41,35 @@ int main(int argc, char *argv[]) {
     yaw += yaw_rate;
   }
 
-  scan_buffer.project();
+  const Eigen::Vector2d origin(-128 * 0.05, -128 * 0.05);
+  const Eigen::Array2i size(256, 256);
+  const float resolution = 0.05;
+
+  cost_map::CostMapScan cost_map(origin, size, resolution);
+  cost_map.set_scan_range_max(1.9);
+
+  scan_buffer.project(cost_map);
+  cost_map.save("cost", "./cost_buffer.png");
+
+  const Eigen::Array2i half_size(32, 32);
+  Eigen::Array2i center;
+  cost_map.world_to_map(Eigen::Vector2d(-3.0, 0.0), center);
+  cost_map::CostMapScan::MapType cropped;
+  if (cost_map.crop("cost", center - half_size, 2 * half_size, cropped)) {
+    Eigen::Array<float, Eigen::Dynamic, Eigen::Dynamic> array =
+        cropped.array();
+    array = array.exp() / (1 + array.exp());
+    Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic> data =
+        ((array < 0.196).cast<uint8_t>() * 255 +
+          (0.65 < array).cast<uint8_t>() * 0 +
+          (0.196 <= array && array <= 0.65).cast<uint8_t>() * 200)
+            .matrix();
+    cv::Mat image;
+    eigen2cv(data, image);
+    cv::flip(image, image, 0);
+    cv::imshow("cropped", image);
+    cv::waitKey(0);
+  }
 
   return 0;
 }

@@ -70,7 +70,10 @@ class DepthFrameBufferNode {
 
   void project(void) {
     if (!buffer_) return;
-    buffer_->project();
+    cost_map::CostMapScan cost_map;
+    cost_map.set_scan_range_max(1.9);
+    buffer_->project(cost_map);
+    cost_map.save("cost", "./cost_buffer.png");
   }
 
   // void publish_pcl(void) {

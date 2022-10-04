@@ -97,7 +97,13 @@ class CostMapScan : public CostMap<float> {
   }
 
   // for debug use only
-  void save(const std::string &layer, const std::string &image_path) {
+  bool save(const std::string &layer, const std::string &image_path) {
+    if (!has(layer)) return false;
+
+    Eigen::Array2i size;
+    get_size(size);
+    if ((size == 0).any()) return false;
+
     Eigen::Array<float, Eigen::Dynamic, Eigen::Dynamic> array =
         data(layer).array();
     array = array.exp() / (1 + array.exp());
@@ -110,6 +116,7 @@ class CostMapScan : public CostMap<float> {
     eigen2cv(data, img);
     cv::flip(img, img, 0);
     cv::imwrite(image_path, img);
+    return true;
   }
 
  private:

@@ -31,9 +31,9 @@ class CostMap {
   ~CostMap() {}
 
   void set_origin(const Eigen::Vector2d &origin) { origin_ = origin; }
-  void set_size(const Eigen::Array2i &size) { size_ = size; }
 
   void get_origin(Eigen::Vector2d &origin) const { origin = origin_; }
+  void get_size(Eigen::Array2i &size) const { size = size_; }
   float get_resolution() const { return resolution_; }
 
   void resize(const Eigen::Array2i &size, const Eigen::Vector2d &origin,
@@ -108,6 +108,10 @@ class CostMap {
 
   void add(const std::string &layer, std::unique_ptr<MapType> data) {
     data_[layer] = std::move(data);
+  }
+
+  bool has(const std::string &layer) const {
+    return data_.find(layer) != data_.end();
   }
 
   inline void world_to_map(const Eigen::Vector2d &position_w,
