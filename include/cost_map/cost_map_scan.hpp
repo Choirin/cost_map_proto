@@ -60,11 +60,7 @@ class CostMapScan : public CostMap<float> {
 
     const Eigen::Array<bool, 1, Eigen::Dynamic> mask =
         scan.ranges().array() < scan_range_max_;
-    if (expand_map) {
-      expand(points, mask, sensor_model_initial_);
-      expand(Eigen::Matrix2Xd(translation),
-             Eigen::Array<bool, 1, 1>::Constant(true), sensor_model_initial_);
-    }
+    if (expand_map) expand(points, translation, mask, sensor_model_initial_);
     project(points, mask, translation);
   }
 
@@ -79,13 +75,38 @@ class CostMapScan : public CostMap<float> {
 
     const Eigen::Array<bool, 1, Eigen::Dynamic> mask =
         scan.ranges().array() < scan_range_max_;
-    if (expand_map) {
-      expand(points, mask, sensor_model_initial_);
-      expand(Eigen::Matrix2Xd(translation),
-             Eigen::Array<bool, 1, 1>::Constant(true), sensor_model_initial_);
-    }
+    if (expand_map) expand(points, translation, mask, sensor_model_initial_);
     project(points, mask, translation);
   }
+
+/*
+  void scan(frame_buffer::ScanFrame &scan,
+            const Eigen::Matrix3d &external_transform) {
+    assert(points.cols() == mask.size());
+
+    Eigen::Array2i center_m;
+    world_to_map(center, center_m);
+    if (!is_inside(center_m)) return;
+
+    for (int i = 0; i < points.cols(); ++i) {
+      if (!mask[i]) continue;
+
+      Eigen::Array2i ray_m;
+      world_to_map(points.col(i), ray_m);
+      bresenham(center_m, ray_m, [this, &ray_m](const Eigen::Array2i &index) {
+        if (!this->is_inside(index)) return true;
+        if ((index == ray_m).all()) {
+          hit("occupied", index);
+          hit("cost", index);
+        } else {
+          miss("free", index);
+          miss("cost", index);
+        }
+        return true;
+      });
+    }
+  }
+*/
 
   // for debug use only
   bool save(const std::string &layer, const std::string &image_path) {

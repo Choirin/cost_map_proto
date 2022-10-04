@@ -91,6 +91,22 @@ target_link_libraries(test_occupancy_grid
   ${catkin_LIBRARIES}
 )
 
+add_executable(test_crop
+  src/test_crop.cpp
+)
+target_link_libraries(test_crop
+  ${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+)
+
+add_executable(scan_image_gen_node
+  src/scan_image_gen_node.cpp
+)
+target_link_libraries(scan_image_gen_node
+  ${PROJECT_NAME}
+  ${catkin_LIBRARIES}
+)
+
 #############
 ## Install ##
 #############

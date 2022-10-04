@@ -14,6 +14,11 @@ class ScanFrameBuffer {
                   const int frame_size)
       : angles_(angles), frame_size_(frame_size) {}
 
+  std::shared_ptr<frame_buffer::ScanFrame> back(void) {
+    std::lock_guard<std::mutex> lock(mtx_);
+    return frames_.back();
+  }
+
   void update(const double &timestamp, const Eigen::VectorXd &ranges,
               const Eigen::Vector2d &translation, const double &yaw) {
     if (frames_.size() != 0) {

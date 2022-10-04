@@ -57,9 +57,8 @@ class CostMap {
     // overlap size
     Eigen::Array2i overlap_size = new_rt - new_lb;
     Eigen::Array2i overlap_size_ = old_rt - old_lb;
-    // std::cout << "new: " << overlap_size(0) << ", " << overlap_size(1) <<
-    // std::endl; std::cout << "old: " << overlap_size_(0) << ", " <<
-    // overlap_size_(1) << std::endl;
+    // std::cout << "new: " << overlap_size.transpose() << std::endl;
+    // std::cout << "old: " << overlap_size_.transpose() << std::endl;
     assert((overlap_size == overlap_size_).all());
 
     // update geometry
@@ -103,11 +102,12 @@ class CostMap {
 
   // Expand the map to contain the given point
   void expand(const Eigen::Matrix2Xd &points,
+              const Eigen::Vector2d &reference,
               const Eigen::Array<bool, Eigen::Dynamic, 1> &mask,
               const CellType value) {
     assert(points.cols() == mask.size());
 
-    Eigen::Vector2d corner_lb = points.col(0), corner_rt = points.col(0);
+    Eigen::Vector2d corner_lb = reference, corner_rt = reference;
     for (int i = 0; i < points.cols(); ++i) {
       if (!mask[i]) continue;
       auto &&point = points.col(i);
@@ -161,13 +161,6 @@ class CostMap {
   inline bool is_inside(const Eigen::Array2i &index) const {
     return (0 <= index).all() && (index < size_).all();
   }
-
-  // // TODO: deprecated
-  // inline bool is_inside(const std::string &layer, const Eigen::Array2i &index) {
-  //   auto &data = data_[layer];
-  //   return (0 <= index(0) && index(0) < data->rows() && 0 <= index(1) &&
-  //           index(1) < data->cols());
-  // }
 
   MapType &data(const std::string &layer) { return *data_[layer]; }
 

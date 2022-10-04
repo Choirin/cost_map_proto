@@ -27,8 +27,9 @@ int main(int argc, char *argv[]) {
   const double radius = 3.0;
   const double speed = 0.05;
   const double yaw_rate = -speed / radius;
-  double x = 0.0, y = 3.0, yaw = 0.0;
+  double x = 3.0, y = 0.0, yaw = M_PI / 2.0;
   for (double timestamp = 0; timestamp < 2 * M_PI / abs(yaw_rate); timestamp += 0.1) {
+  // for (double timestamp = 0; timestamp < 0.5; timestamp += 0.1) {
     Eigen::VectorXd ranges(kScanLength);
 
     for (int i = 0; i < kScanLength; i++) {
@@ -42,6 +43,12 @@ int main(int argc, char *argv[]) {
     yaw += yaw_rate;
   }
 
+  scan_buffer.update(0.0, (1 / angles->array().cos()).matrix(), Eigen::Vector2d(0.0, 0.0), M_PI / 2.0);
+  scan_buffer.update(0.0, (1 / angles->array().cos()).matrix(), Eigen::Vector2d(-5.0, 0.0), 0.0);
+  scan_buffer.update(0.0, (1 / angles->array().cos()).matrix(), Eigen::Vector2d(-15.0, 0.0), 0.0);
+  scan_buffer.update(0.0, (1 / angles->array().cos()).matrix(), Eigen::Vector2d(-10.0, 0.0), 0.0);
+  // scan_buffer.update(0.0, (1 / angles->array().cos()).matrix(), Eigen::Vector2d(-5.0, 0.0), 0.0);
+
   const Eigen::Vector2d origin(-128 * 0.05, -128 * 0.05);
   const Eigen::Array2i size(256, 256);
   const float resolution = 0.05;
@@ -49,8 +56,23 @@ int main(int argc, char *argv[]) {
   cost_map::CostMapScan cost_map(origin, size, resolution);
   cost_map.set_scan_range_max(1.9);
 
+  Eigen::Matrix3d external_transform = Eigen::Matrix3d::Identity();
+  // external_transform.block<2, 2>(0, 0) = Eigen::Rotation2Dd(M_PI / 2).toRotationMatrix();
+  // external_transform(0, 2) = 2.0;
+  std::cout << external_transform << std::endl;
+
   scan_buffer.project(cost_map);
   cost_map.save("cost", "./cost_buffer.png");
+
+  {
+    Eigen::Vector2d origin;
+    cost_map.get_origin(origin);
+    Eigen::Array2i size;
+    cost_map.get_size(size);
+    std::cout << "origin: " << origin.transpose() << std::endl;
+    std::cout << "size: " << size.transpose() << std::endl;
+  }
+
 
   const Eigen::Array2i half_size(32, 32);
   Eigen::Array2i center;
