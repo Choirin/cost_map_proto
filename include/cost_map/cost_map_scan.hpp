@@ -64,7 +64,30 @@ class CostMapScan : public CostMap<float> {
 
     const Eigen::Array<bool, 1, Eigen::Dynamic> mask =
         scan.ranges().array() < scan_range_max_;
-    if (expand_map) expand(points, mask, sensor_model_initial_);
+    if (expand_map) {
+      expand(points, mask, sensor_model_initial_);
+      expand(Eigen::Matrix2Xd(translation),
+             Eigen::Array<bool, 1, 1>::Constant(true), sensor_model_initial_);
+    }
+    project(points, mask, translation);
+  }
+
+  void update(frame_buffer::ScanFrame &scan,
+              const Eigen::Matrix3d &external_transform,
+              const bool &expand_map = true) {
+    Eigen::Vector2d translation = scan.translation();
+    translation = external_transform.block<2, 2>(0, 0) * translation +
+                  external_transform.block<2, 1>(0, 2);
+    Eigen::Matrix2Xd points;
+    scan.transformed_scan(points, external_transform);
+
+    const Eigen::Array<bool, 1, Eigen::Dynamic> mask =
+        scan.ranges().array() < scan_range_max_;
+    if (expand_map) {
+      expand(points, mask, sensor_model_initial_);
+      expand(Eigen::Matrix2Xd(translation),
+             Eigen::Array<bool, 1, 1>::Constant(true), sensor_model_initial_);
+    }
     project(points, mask, translation);
   }
 

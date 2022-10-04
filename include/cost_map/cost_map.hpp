@@ -39,7 +39,7 @@ class CostMap {
   void resize(const Eigen::Array2i &size, const Eigen::Vector2d &origin,
               const CellType value) {
     Eigen::Array2i offset_m =
-        ((origin - origin_) / resolution_).cast<int>().array();
+        ((origin - origin_) / resolution_).cast<int>().array().reverse();
     // overlap on the original map coords
     Eigen::Array2i old_lb = offset_m.max(Eigen::Array2i::Zero());
     Eigen::Array2i old_rt = (offset_m + size).min(size_);
@@ -88,14 +88,14 @@ class CostMap {
     } else {
       Eigen::Array2d old_corner_lb = origin_.array();
       Eigen::Array2d old_corner_rt =
-          origin_.array() + size_.cast<double>() * resolution_;
+          origin_.array() + size_.cast<double>().reverse() * resolution_;
       new_corner_lb =
           (corner_lb.array().min(old_corner_lb) / resolution_).floor();
       new_corner_rt =
           (corner_rt.array().max(old_corner_rt) / resolution_).ceil();
     }
     Eigen::Vector2d origin = (new_corner_lb * resolution_).matrix();
-    Eigen::Array2i size = (new_corner_rt - new_corner_lb + 0.5).cast<int>();
+    Eigen::Array2i size = (new_corner_rt - new_corner_lb + 0.5).cast<int>().reverse();
     // std::cout << "origin: " << origin(0) << ", " << origin(1) << std::endl;
     // std::cout << "size: " << size(0) << ", " << size(1) << std::endl;
     resize(size, origin, value);
@@ -134,14 +134,20 @@ class CostMap {
 
   inline void world_to_map(const Eigen::Vector2d &position_w,
                            Eigen::Array2i &index_m) const {
-    Eigen::Vector2d position_m =
-        (position_w - origin_) / resolution_ + Eigen::Vector2d::Constant(0.5);
-    index_m = position_m.array().floor().cast<int>();
+    Eigen::Array2i position_m =
+        ((position_w - origin_) / resolution_ + Eigen::Vector2d::Constant(0.5))
+            .array()
+            .cast<int>();
+    index_m[0] = position_m[1];
+    index_m[1] = position_m[0];
   }
 
   inline void map_to_world(const Eigen::Array2i &index_m,
                            Eigen::Vector2d &position_w) const {
-    position_w = index_m.matrix().cast<double>() * resolution_ + origin_;
+    Eigen::Vector2d origin_offset = (origin_ / resolution_).array().round().matrix();
+    position_w[0] = index_m[1];
+    position_w[1] = index_m[0];
+    position_w = (position_w + origin_offset) * resolution_;
   }
 
   inline bool is_inside(const Eigen::Array2i &index) const {
@@ -157,10 +163,9 @@ class CostMap {
 
   MapType &data(const std::string &layer) { return *data_[layer]; }
 
-  CellType &at(const std::string &layer, const Eigen::Array2i &index) {
+  inline CellType &at(const std::string &layer, const Eigen::Array2i &index) {
     auto &data = data_[layer];
-    assert(0 <= index(0) && index(0) < data->rows());
-    assert(0 <= index(1) && index(1) < data->cols());
+    assert(is_inside(index));
     return (*data)(index(0), index(1));
   }
 

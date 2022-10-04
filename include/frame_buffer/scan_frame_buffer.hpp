@@ -37,6 +37,14 @@ class ScanFrameBuffer {
     for (auto frame : frames_) cost_map.update(*frame, expand_map);
   }
 
+  void project(cost_map::CostMapScan &cost_map,
+               const Eigen::Matrix3d &external_transform,
+               const bool expand_map = true) {
+    std::lock_guard<std::mutex> lock(mtx_);
+    for (auto frame : frames_)
+      cost_map.update(*frame, external_transform, expand_map);
+  }
+
  protected:
   std::shared_ptr<Eigen::VectorXd> angles_;
   const size_t frame_size_;
