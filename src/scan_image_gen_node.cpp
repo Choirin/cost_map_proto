@@ -1,6 +1,6 @@
+#include <nav_msgs/OccupancyGrid.h>
 #include <ros/ros.h>
 #include <sensor_msgs/LaserScan.h>
-#include <nav_msgs/OccupancyGrid.h>
 #include <tf/transform_listener.h>
 
 #include <cmath>
@@ -18,7 +18,11 @@ const int kLaserScanSkip = 4;
 const Eigen::Array2i kCropMapHalfSize(64, 64);
 const double kInitialCellValue = logf((255.0 - 100.0) / 255.0);
 
-void show_image(
+const std::string kOdomFrame = "odom";
+const std::string kGlobalFrame = "map";
+const std::string kLaserTopic = "/depth/scan";
+
+void save_image(
     const std::string &name,
     const Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic> &mat) {
   Eigen::Array<float, Eigen::Dynamic, Eigen::Dynamic> array = mat.array();
@@ -50,93 +54,90 @@ bool crop_map_image(cost_map::CostMap<float> &cost_map,
 class ScanFrameBufferNode {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  ScanFrameBufferNode(std::shared_ptr<cost_map::OccupancyGrid> occupancy_grid)
-      : occupancy_grid_(occupancy_grid), frame_size_(32), odom_frame_("odom") {
+  ScanFrameBufferNode(std::shared_ptr<cost_map::OccupancyGrid> occupancy_grid,
+                      const std::string &odom_frame,
+                      const std::string &global_frame, const size_t &frame_size,
+                      const std::string &laser_topic)
+      : occupancy_grid_(occupancy_grid),
+        odom_frame_(odom_frame),
+        global_frame_(global_frame),
+        frame_size_(frame_size),
+        laserscan_skip_(kLaserScanSkip) {
     laserscan_sub_ =
-        nh_.subscribe("/depth/scan", 1, &ScanFrameBufferNode::callback, this);
+        nh_.subscribe(laser_topic, 1, &ScanFrameBufferNode::callback, this);
   }
 
   void callback(const sensor_msgs::LaserScan &msg) {
     // obatain translation and rotation.
-    const std::string &frame_id = msg.header.frame_id;
+    sensor_frame_ = msg.header.frame_id;
     Eigen::Vector2d translation;
     double yaw;
-    if (!get_tf(odom_frame_, frame_id, msg.header.stamp, translation, yaw))
+    if (!get_tf(odom_frame_, sensor_frame_, msg.header.stamp, translation, yaw))
       return;
 
     if (!buffer_) {
-      std::shared_ptr<Eigen::VectorXd> angles_ =
-          std::shared_ptr<Eigen::VectorXd>(
-              new Eigen::VectorXd(msg.ranges.size() / kLaserScanSkip));
-      for (size_t i = 0; i < msg.ranges.size() / kLaserScanSkip; ++i) {
-        (*angles_)[i] =
-            msg.angle_min + msg.angle_increment * i * kLaserScanSkip;
-      }
+      std::shared_ptr<Eigen::VectorXd> angles =
+          std::shared_ptr<Eigen::VectorXd>(new Eigen::VectorXd);
+      *angles = Eigen::VectorXd::LinSpaced(msg.ranges.size() / laserscan_skip_,
+                                           msg.angle_min, msg.angle_max);
       buffer_ =
-          std::make_unique<frame_buffer::ScanFrameBuffer>(angles_, frame_size_);
+          std::make_unique<frame_buffer::ScanFrameBuffer>(angles, frame_size_);
     }
 
-    Eigen::VectorXd ranges(msg.ranges.size() / kLaserScanSkip);
-    for (size_t i = 0; i < msg.ranges.size() / kLaserScanSkip; ++i) {
-      ranges[i] = msg.ranges[msg.ranges.size() - i * kLaserScanSkip - 1];
-    }
+    Eigen::VectorXd ranges(msg.ranges.size() / laserscan_skip_);
+    for (size_t i = 0; i < msg.ranges.size() / laserscan_skip_; ++i)
+      ranges[i] = msg.ranges[msg.ranges.size() - i * laserscan_skip_ - 1];
     buffer_->update(msg.header.stamp.toSec(), ranges, translation, yaw);
   }
 
-  void project(void) {
-    if (!buffer_) return;
+  bool generate_cropped_images(cost_map::CostMap<float>::MapType &cropped_scan,
+                               cost_map::CostMap<float>::MapType &cropped_grid,
+                               const Eigen::Array2i &half_size) {
+    if (!buffer_) return false;
     std::unique_ptr<cost_map::CostMapScan> cost_map =
         create_cost_map_from_occupancy_grid();
 
+    // get tfs at the time of the last scan.
     auto last_frame = buffer_->back();
     auto time = ros::Time().fromSec(last_frame->timestamp());
-    Eigen::Vector2d global_translation, odom_translation;
-    double global_yaw, odom_yaw;
-    if (!get_tf("map", "laser", time, global_translation, global_yaw) ||
-        !get_tf("odom", "laser", time, odom_translation, odom_yaw))
-      return;
+    Eigen::Vector2d global_translation, translation;
+    double global_yaw, yaw;
+    if (!get_tf(global_frame_, sensor_frame_, time, global_translation,
+                global_yaw) ||
+        !get_tf(global_frame_, odom_frame_, time, translation, yaw))
+      return false;
 
-    // Eigen::Matrix2d rotation =
-    //     Eigen::Rotation2Dd(global_yaw - odom_yaw).toRotationMatrix();
-
-    // Eigen::Matrix3d transform = Eigen::Matrix3d::Zero();
-    // transform.block<2, 2>(0, 0) = rotation;
-    // transform.block<2, 1>(0, 2) = global_translation - rotation * odom_translation;
-
-    Eigen::Vector2d translation;
-    double yaw;
-    if (!get_tf("map", "odom", time, translation, yaw)) return;
-
+    // create transform matrix from odom to global frame.
     Eigen::Matrix3d transform = Eigen::Matrix3d::Zero();
     transform.block<2, 2>(0, 0) = Eigen::Rotation2Dd(yaw).toRotationMatrix();
     transform.block<2, 1>(0, 2) = translation;
-    // std::cout << transform << std::endl;
 
+    // project scans to cost map.
     buffer_->project(*cost_map, transform, false);
-    // show_image("cost_map", cost_map.data("cost"));
-    cost_map->save("cost", "./cost_buffer.png");
 
-    cost_map::CostMap<float>::MapType cropped_scan, cropped_grid;
-    if (!crop_map_image(*cost_map, global_translation, kCropMapHalfSize,
+    // crop cost maps.
+    if (!crop_map_image(*cost_map, global_translation, half_size,
                         cropped_scan) ||
-        !crop_map_image(*occupancy_grid_, global_translation, kCropMapHalfSize,
+        !crop_map_image(*occupancy_grid_, global_translation, half_size,
                         cropped_grid))
-      return;
-    show_image("scan.png", cropped_scan);
-    show_image("grid.png", cropped_grid);
+      return false;
+    return true;
   }
 
  private:
   ros::NodeHandle nh_;
-
   ros::Subscriber laserscan_sub_;
   tf::TransformListener tf_listener_;
 
-  std::shared_ptr<cost_map::OccupancyGrid> occupancy_grid_;
-
-  const size_t frame_size_;
+  const std::shared_ptr<cost_map::OccupancyGrid> occupancy_grid_;
   const std::string odom_frame_;
+  const std::string global_frame_;
+  const size_t frame_size_;
+
+  const int laserscan_skip_;
+
   std::unique_ptr<frame_buffer::ScanFrameBuffer> buffer_;
+  std::string sensor_frame_;
 
   bool get_tf(const std::string &parent_frame_id, const std::string &frame_id,
               const ros::Time &time, Eigen::Vector2d &translation,
@@ -154,7 +155,8 @@ class ScanFrameBufferNode {
     return true;
   }
 
-  std::unique_ptr<cost_map::CostMapScan> create_cost_map_from_occupancy_grid(void) {
+  std::unique_ptr<cost_map::CostMapScan> create_cost_map_from_occupancy_grid(
+      void) {
     Eigen::Vector2d origin;
     Eigen::Array2i size;
     occupancy_grid_->get_origin(origin);
@@ -169,8 +171,8 @@ class ScanFrameBufferNode {
   }
 };
 
-
-std::unique_ptr<cost_map::OccupancyGrid> load_occupancy_grid_from_rostopic(void) {
+std::unique_ptr<cost_map::OccupancyGrid> load_occupancy_grid_from_rostopic(
+    void) {
   ros::NodeHandle nh;
   std::unique_ptr<cost_map::OccupancyGrid> occupancy_grid;
 
@@ -213,22 +215,30 @@ std::unique_ptr<cost_map::OccupancyGrid> load_occupancy_grid_from_rostopic(void)
 }
 
 int main(int argc, char *argv[]) {
-  ros::init(argc, argv, "scan_frame_node");
-  std::cout << "main" << std::endl;
+  ros::init(argc, argv, "scan_image_gen_node");
+  ROS_INFO("scan_image_gen_node started.");
 
+  // Load occupancy grid from rostopic, expand it.
   std::unique_ptr<cost_map::OccupancyGrid> occupancy_grid =
       std::move(load_occupancy_grid_from_rostopic());
-  // show_image("1", occupancy_grid->data("cost"));
   occupancy_grid->expand(kCropMapHalfSize, kInitialCellValue);
+  ROS_INFO("grid map loaded.");
 
-  ScanFrameBufferNode frame_buffer_node(std::move(occupancy_grid));
+  ScanFrameBufferNode frame_buffer_node(std::move(occupancy_grid), kOdomFrame,
+                                        kGlobalFrame, 32, kLaserTopic);
 
+  // 1 thread to process subscriber.
   ros::AsyncSpinner spinner(1);
   spinner.start();
 
   ros::Rate loop_rate(0.2);
   while (ros::ok()) {
-    frame_buffer_node.project();
+    cost_map::CostMap<float>::MapType cropped_scan, cropped_grid;
+    if (frame_buffer_node.generate_cropped_images(cropped_scan, cropped_grid,
+                                                  kCropMapHalfSize)) {
+      save_image("scan.png", cropped_scan);
+      save_image("grid.png", cropped_grid);
+    }
     loop_rate.sleep();
   }
 
