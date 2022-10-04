@@ -21,7 +21,8 @@ int main(int argc, char *argv[]) {
     (*angles)[i] = kMinAngle + kAngleIncrement * i;
   }
 
-  frame_buffer::ScanFrameBuffer scan_buffer(angles);
+  const size_t kScanFrameBufferSize = 32;
+  frame_buffer::ScanFrameBuffer scan_buffer(angles, kScanFrameBufferSize);
 
   const double radius = 3.0;
   const double speed = 0.05;
@@ -67,8 +68,7 @@ int main(int argc, char *argv[]) {
     cv::Mat image;
     eigen2cv(data, image);
     cv::flip(image, image, 0);
-    cv::imshow("cropped", image);
-    cv::waitKey(0);
+    cv::imwrite("./cropped.png", image);
   }
 
   return 0;

@@ -79,7 +79,7 @@ class CostMap {
     }
   }
 
-  void extend(const Eigen::Vector2d &corner_lb,
+  void expand(const Eigen::Vector2d &corner_lb,
               const Eigen::Vector2d &corner_rt, const CellType value) {
     Eigen::Array2d new_corner_lb, new_corner_rt;
     if ((size_ == Eigen::Array2i::Zero()).any()) {
@@ -99,6 +99,24 @@ class CostMap {
     // std::cout << "origin: " << origin(0) << ", " << origin(1) << std::endl;
     // std::cout << "size: " << size(0) << ", " << size(1) << std::endl;
     resize(size, origin, value);
+  }
+
+  // Expand the map to contain the given point
+  void expand(const Eigen::Matrix2Xd &points,
+              const Eigen::Array<bool, Eigen::Dynamic, 1> &mask,
+              const CellType value) {
+    assert(points.cols() == mask.size());
+
+    Eigen::Vector2d corner_lb = points.col(0), corner_rt = points.col(0);
+    for (int i = 0; i < points.cols(); ++i) {
+      if (!mask[i]) continue;
+      auto &&point = points.col(i);
+      if (point(0) < corner_lb(0)) corner_lb(0) = point(0);
+      if (point(1) < corner_lb(1)) corner_lb(1) = point(1);
+      if (corner_rt(0) < point(0)) corner_rt(0) = point(0);
+      if (corner_rt(1) < point(1)) corner_rt(1) = point(1);
+    }
+    expand(corner_lb, corner_rt, value);
   }
 
   void add(const std::string &layer, const CellType value) {
@@ -126,11 +144,16 @@ class CostMap {
     position_w = index_m.matrix().cast<double>() * resolution_ + origin_;
   }
 
-  inline bool is_inside(const std::string &layer, const Eigen::Array2i &index) {
-    auto &data = data_[layer];
-    return (0 <= index(0) && index(0) < data->rows() && 0 <= index(1) &&
-            index(1) < data->cols());
+  inline bool is_inside(const Eigen::Array2i &index) const {
+    return (0 <= index).all() && (index < size_).all();
   }
+
+  // // TODO: deprecated
+  // inline bool is_inside(const std::string &layer, const Eigen::Array2i &index) {
+  //   auto &data = data_[layer];
+  //   return (0 <= index(0) && index(0) < data->rows() && 0 <= index(1) &&
+  //           index(1) < data->cols());
+  // }
 
   MapType &data(const std::string &layer) { return *data_[layer]; }
 
@@ -143,7 +166,7 @@ class CostMap {
 
   bool crop(const std::string &layer, const Eigen::Array2i &left_bottom,
             const Eigen::Array2i size, MapType &value) {
-    if (!is_inside(layer, left_bottom) || !is_inside(layer, left_bottom + size))
+    if (!is_inside(left_bottom) || !is_inside(left_bottom + size))
       return false;
     value = data_[layer]->block(left_bottom(0), left_bottom(1), size(0), size(1));
     return true;

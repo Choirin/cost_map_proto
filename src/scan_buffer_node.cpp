@@ -46,8 +46,8 @@ class ScanFrameBufferNode {
         (*angles_)[i] =
             msg.angle_min + msg.angle_increment * i * kLaserScanSkip;
       }
-      buffer_ = std::make_unique<frame_buffer::ScanFrameBuffer>(
-          angles_, frame_size_, odom_frame_);
+      buffer_ =
+          std::make_unique<frame_buffer::ScanFrameBuffer>(angles_, frame_size_);
     }
 
     Eigen::VectorXd ranges(msg.ranges.size() / kLaserScanSkip);

@@ -29,7 +29,7 @@ class DepthFrameBufferNode {
     depth_to_scan_->set_optical_axis_pitch(DEG2RAD(10));
 
     buffer_ = std::make_unique<frame_buffer::ScanFrameBuffer>(
-        depth_to_scan_->angles(), frame_size_, odom_frame_);
+        depth_to_scan_->angles(), frame_size_);
 
     depth_sub_ =
         it_.subscribe("/depth/image_raw", 1,

@@ -57,43 +57,15 @@ class CostMapScan : public CostMap<float> {
   }
   void set_scan_range_max(const float max) { scan_range_max_ = max; }
 
-  void update(frame_buffer::ScanFrame &scan, const bool &extend_map = true) {
+  void update(frame_buffer::ScanFrame &scan, const bool &expand_map = true) {
     const auto &translation = scan.translation();
     Eigen::Matrix2Xd points;
     scan.transformed_scan(points);
 
-    if (extend_map) {
-      Eigen::Vector2d corner_lb = translation, corner_rt = translation;
-      for (int i = 0; i < scan.ranges().size(); ++i) {
-        auto &range = scan.ranges()[i];
-        if (scan_range_max_ < range) continue;
-        auto &&point = points.col(i);
-        if (point(0) < corner_lb(0)) corner_lb(0) = point(0);
-        if (point(1) < corner_lb(1)) corner_lb(1) = point(1);
-        if (corner_rt(0) < point(0)) corner_rt(0) = point(0);
-        if (corner_rt(1) < point(1)) corner_rt(1) = point(1);
-      }
-      extend(corner_lb, corner_rt, sensor_model_initial_);
-    }
-
-    Eigen::Array2i center_m, ray_m;
-    world_to_map(translation, center_m);
-    if (!is_inside("free", center_m)) return;
-    for (int i = 0; i < points.cols(); ++i) {
-      if (scan_range_max_ < scan.ranges()[i]) continue;
-      world_to_map(points.col(i), ray_m);
-      bresenham(
-          center_m, ray_m,
-          [this, &ray_m](const Eigen::Array2i &index) {
-            if (!this->is_inside("free", index) || (index == ray_m).all()) return true;
-            miss("free", index);
-            miss("cost", index);
-            return true;
-          });
-      if (!is_inside("free", ray_m)) continue;
-      hit("occupied", ray_m);
-      hit("cost", ray_m);
-    }
+    const Eigen::Array<bool, 1, Eigen::Dynamic> mask =
+        scan.ranges().array() < scan_range_max_;
+    if (expand_map) expand(points, mask, sensor_model_initial_);
+    project(points, mask, translation);
   }
 
   // for debug use only
@@ -130,6 +102,34 @@ class CostMapScan : public CostMap<float> {
     at(layer, index) += sensor_model_miss_;
     if (at(layer, index) < sensor_model_min_)
       at(layer, index) = sensor_model_min_;
+  }
+
+  void project(const Eigen::Matrix2Xd &points,
+               const Eigen::Array<bool, Eigen::Dynamic, 1> &mask,
+               const Eigen::Vector2d &center) {
+    assert(points.cols() == mask.size());
+
+    Eigen::Array2i center_m;
+    world_to_map(center, center_m);
+    if (!is_inside(center_m)) return;
+
+    for (int i = 0; i < points.cols(); ++i) {
+      if (!mask[i]) continue;
+
+      Eigen::Array2i ray_m;
+      world_to_map(points.col(i), ray_m);
+      bresenham(center_m, ray_m, [this, &ray_m](const Eigen::Array2i &index) {
+        if (!this->is_inside(index)) return true;
+        if ((index == ray_m).all()) {
+          hit("occupied", index);
+          hit("cost", index);
+        } else {
+          miss("free", index);
+          miss("cost", index);
+        }
+        return true;
+      });
+    }
   }
 
   float sensor_model_initial_;

@@ -11,10 +11,8 @@ namespace frame_buffer {
 class ScanFrameBuffer {
  public:
   ScanFrameBuffer(const std::shared_ptr<Eigen::VectorXd> angles,
-                  const int frame_size, const std::string odom_frame)
-      : angles_(angles), frame_size_(frame_size), odom_frame_(odom_frame) {}
-  ScanFrameBuffer(const std::shared_ptr<Eigen::VectorXd> angles)
-      : ScanFrameBuffer(angles, 32, "odom") {}
+                  const int frame_size)
+      : angles_(angles), frame_size_(frame_size) {}
 
   void update(const double &timestamp, const Eigen::VectorXd &ranges,
               const Eigen::Vector2d &translation, const double &yaw) {
@@ -34,17 +32,15 @@ class ScanFrameBuffer {
     std::cout << "new frame inserted. " << frames_.size() << std::endl;
   }
 
-  void project(cost_map::CostMapScan &cost_map, const bool extend = true) {
+  void project(cost_map::CostMapScan &cost_map, const bool expand_map = true) {
     std::lock_guard<std::mutex> lock(mtx_);
-    for (auto frame : frames_) cost_map.update(*frame, extend);
+    for (auto frame : frames_) cost_map.update(*frame, expand_map);
   }
 
  protected:
   std::shared_ptr<Eigen::VectorXd> angles_;
   const size_t frame_size_;
   std::deque<std::shared_ptr<frame_buffer::ScanFrame>> frames_;
-
-  const std::string odom_frame_;
 
   std::mutex mtx_;
 };
