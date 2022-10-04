@@ -22,6 +22,9 @@ const std::string kOdomFrame = "odom";
 const std::string kGlobalFrame = "map";
 const std::string kLaserTopic = "/depth/scan";
 
+const double kScanUpdateDistThresh = 0.5;
+const double kScanUpdateAngleThresh = 30.0 * M_PI / 180.0;
+
 void save_image(
     const std::string &name,
     const Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic> &mat) {
@@ -80,8 +83,8 @@ class ScanFrameBufferNode {
           std::shared_ptr<Eigen::VectorXd>(new Eigen::VectorXd);
       *angles = Eigen::VectorXd::LinSpaced(msg.ranges.size() / laserscan_skip_,
                                            msg.angle_min, msg.angle_max);
-      buffer_ =
-          std::make_unique<frame_buffer::ScanFrameBuffer>(angles, frame_size_);
+      buffer_ = std::make_unique<frame_buffer::ScanFrameBuffer>(
+          angles, kScanUpdateDistThresh, kScanUpdateAngleThresh, frame_size_);
     }
 
     Eigen::VectorXd ranges(msg.ranges.size() / laserscan_skip_);
@@ -121,6 +124,8 @@ class ScanFrameBufferNode {
         !crop_map_image(*occupancy_grid_, global_translation, half_size,
                         cropped_grid))
       return false;
+
+    ROS_INFO("scan image is generated from %lu frames.", buffer_->size());
     return true;
   }
 

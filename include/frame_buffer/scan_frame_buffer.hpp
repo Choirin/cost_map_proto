@@ -11,12 +11,26 @@ namespace frame_buffer {
 class ScanFrameBuffer {
  public:
   ScanFrameBuffer(const std::shared_ptr<Eigen::VectorXd> angles,
+                  const double dist_thresh, const double angle_thresh,
                   const int frame_size)
-      : angles_(angles), frame_size_(frame_size) {}
+      : angles_(angles),
+        dist_thresh_(dist_thresh),
+        angle_thresh_(angle_thresh),
+        frame_size_(frame_size) {}
 
   std::shared_ptr<frame_buffer::ScanFrame> back(void) {
     std::lock_guard<std::mutex> lock(mtx_);
     return frames_.back();
+  }
+
+  void clear(void) {
+    std::lock_guard<std::mutex> lock(mtx_);
+    frames_.clear();
+  }
+
+  size_t size(void) {
+    std::lock_guard<std::mutex> lock(mtx_);
+    return frames_.size();
   }
 
   void update(const double &timestamp, const Eigen::VectorXd &ranges,
@@ -25,7 +39,7 @@ class ScanFrameBuffer {
       // insert a frame, if there is a large difference in distance or angle
       auto d_translation = frames_.back()->translation() - translation;
       auto d_rotation = fmod(fabs(frames_.back()->rotation() - yaw), M_PI);
-      if (d_translation.norm() < 0.3 && d_rotation < 0.5) {
+      if (d_translation.norm() < dist_thresh_ && d_rotation < angle_thresh_) {
         return;
       }
     }
@@ -34,7 +48,7 @@ class ScanFrameBuffer {
     frames_.emplace_back(new frame_buffer::ScanFrame(timestamp, translation,
                                                      yaw, angles_, ranges));
     if (frames_.size() > frame_size_) frames_.pop_front();
-    std::cout << "new frame inserted. " << frames_.size() << std::endl;
+    // std::cout << "new frame inserted. " << frames_.size() << std::endl;
   }
 
   void project(cost_map::CostMapScan &cost_map, const bool expand_map = true) {
@@ -52,6 +66,10 @@ class ScanFrameBuffer {
 
  protected:
   std::shared_ptr<Eigen::VectorXd> angles_;
+
+  double dist_thresh_;
+  double angle_thresh_;
+
   const size_t frame_size_;
   std::deque<std::shared_ptr<frame_buffer::ScanFrame>> frames_;
 
