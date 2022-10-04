@@ -20,7 +20,7 @@ class OccupancyGrid : public CostMap<float> {
                 const Eigen::Vector2d &origin, const Eigen::Array2i &size,
                 const float resolution)
       : CostMap(origin, size, resolution) {
-    add("occupancy", std::move(data));
+    add("cost", std::move(data));
   }
   OccupancyGrid(std::unique_ptr<OccupancyGrid::MapType> data,
                 const Eigen::Vector2d &origin, const Eigen::Array2i &size,
@@ -30,7 +30,7 @@ class OccupancyGrid : public CostMap<float> {
         occupied_thresh_(occupied_thresh),
         free_thresh_(free_thresh),
         negate_(negate) {
-    add("occupancy", std::move(data));
+    add("cost", std::move(data));
   }
 
   float get_occupied_thresh() const { return occupied_thresh_; }

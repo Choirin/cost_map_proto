@@ -16,7 +16,7 @@
 
 namespace cost_map {
 
-inline float log_odds(const float raw) { return logf(raw / (1.0 - raw)); }
+inline float logit(const float raw) { return logf(raw / (1.0 - raw)); }
 
 class CostMapScan : public CostMap<float> {
  public:
@@ -24,11 +24,11 @@ class CostMapScan : public CostMap<float> {
   CostMapScan(const float initial = 0.5, const float hit = 0.7,
               const float miss = 0.4, const float min = 0.12,
               const float max = 0.97)
-      : sensor_model_initial_(log_odds(initial)),
-        sensor_model_hit_(log_odds(hit)),
-        sensor_model_miss_(log_odds(miss)),
-        sensor_model_min_(log_odds(min)),
-        sensor_model_max_(log_odds(max)),
+      : sensor_model_initial_(logit(initial)),
+        sensor_model_hit_(logit(hit)),
+        sensor_model_miss_(logit(miss)),
+        sensor_model_min_(logit(min)),
+        sensor_model_max_(logit(max)),
         scan_range_max_(INFINITY) {
     add("free", sensor_model_initial_);
     add("occupied", sensor_model_initial_);
@@ -39,11 +39,11 @@ class CostMapScan : public CostMap<float> {
               const float hit = 0.7, const float miss = 0.4,
               const float min = 0.12, const float max = 0.97)
       : CostMap(origin, size, resolution),
-        sensor_model_initial_(log_odds(initial)),
-        sensor_model_hit_(log_odds(hit)),
-        sensor_model_miss_(log_odds(miss)),
-        sensor_model_min_(log_odds(min)),
-        sensor_model_max_(log_odds(max)),
+        sensor_model_initial_(logit(initial)),
+        sensor_model_hit_(logit(hit)),
+        sensor_model_miss_(logit(miss)),
+        sensor_model_min_(logit(min)),
+        sensor_model_max_(logit(max)),
         scan_range_max_(INFINITY) {
     add("free", sensor_model_initial_);
     add("occupied", sensor_model_initial_);
@@ -99,9 +99,9 @@ class CostMapScan : public CostMap<float> {
         data(layer).array();
     array = array.exp() / (1 + array.exp());
     Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic> data =
-        ((array < 0.5).cast<uint8_t>() * 255 +
-         (0.5 < array).cast<uint8_t>() * 0 +
-         (0.5 == array).cast<uint8_t>() * 200)
+        ((array < 0.196).cast<uint8_t>() * 255 +
+         (0.65 < array).cast<uint8_t>() * 0 +
+         (0.196 <= array && array <= 0.65).cast<uint8_t>() * 200)
             .matrix();
     cv::Mat img;
     eigen2cv(data, img);

@@ -37,7 +37,7 @@ std::unique_ptr<OccupancyGrid> LoadOccupancyGridFromFile(
     data->array() = data->array() / 255.0;
   else
     data->array() = (255.0 - data->array()) / 255.0;
-  data->array() = data->array().log();
+  data->array() = (data->array() / (1.0 - data->array())).log();
 
   const Eigen::Vector2d origin_2d(origin[0], origin[1]);
   const Eigen::Array2i size(data->rows(), data->cols());
@@ -74,7 +74,7 @@ void SaveOccupancyGridAsFile(
   file.close();
 
   OccupancyGrid::MapType data = cost_map.data("occupancy");
-  data.array() = data.array().exp();
+  data.array() = data.array().exp() / (1 + data.array().exp());
   if (cost_map.get_negate()) data.array() = 1.0 - data.array();
   Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic> data_uint8 =
       ((data.array() < free_thresh).cast<uint8_t>() * 255 +

@@ -119,6 +119,14 @@ class CostMap {
     expand(corner_lb, corner_rt, value);
   }
 
+  // Expand the map with the given margin
+  void expand(const Eigen::Array2i &margin, const CellType value) {
+    Eigen::Vector2d origin =
+        origin_ - margin.cast<double>().matrix() * resolution_;
+    Eigen::Array2i size = size_ + margin * 2;
+    resize(size, origin, value);
+  }
+
   void add(const std::string &layer, const CellType value) {
     data_[layer] = std::unique_ptr<MapType>(new MapType);
     *data_[layer] = MapType::Constant(size_(0), size_(1), value);
