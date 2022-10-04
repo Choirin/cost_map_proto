@@ -47,7 +47,7 @@ class ScanFrameBufferNode {
             msg.angle_min + msg.angle_increment * i * kLaserScanSkip;
       }
       buffer_ = std::make_unique<frame_buffer::ScanFrameBuffer>(
-          angles_, frame_size_, odom_frame_);
+          angles_, 0.5, 30.0 * M_PI / 180.0, frame_size_);
     }
 
     Eigen::VectorXd ranges(msg.ranges.size() / kLaserScanSkip);
@@ -59,7 +59,10 @@ class ScanFrameBufferNode {
 
   void project(void) {
     if (!buffer_) return;
-    buffer_->project();
+    cost_map::CostMapScan cost_map;
+    cost_map.set_scan_range_max(1.9);
+    buffer_->project(cost_map);
+    cost_map.save("cost", "./cost_buffer.png");
   }
 
  private:

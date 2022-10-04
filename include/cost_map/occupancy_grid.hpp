@@ -14,13 +14,13 @@ std::unique_ptr<OccupancyGrid> LoadOccupancyGridFromFile(
 void SaveOccupancyGridAsFile(const std::filesystem::path &map_yaml,
                              OccupancyGrid &cost_map);
 
-class OccupancyGrid : public CostMap<uint8_t> {
+class OccupancyGrid : public CostMap<float> {
  public:
   OccupancyGrid(std::unique_ptr<OccupancyGrid::MapType> data,
                 const Eigen::Vector2d &origin, const Eigen::Array2i &size,
                 const float resolution)
       : CostMap(origin, size, resolution) {
-    add("occupancy", std::move(data));
+    add("cost", std::move(data));
   }
   OccupancyGrid(std::unique_ptr<OccupancyGrid::MapType> data,
                 const Eigen::Vector2d &origin, const Eigen::Array2i &size,
@@ -30,7 +30,7 @@ class OccupancyGrid : public CostMap<uint8_t> {
         occupied_thresh_(occupied_thresh),
         free_thresh_(free_thresh),
         negate_(negate) {
-    add("occupancy", std::move(data));
+    add("cost", std::move(data));
   }
 
   float get_occupied_thresh() const { return occupied_thresh_; }
