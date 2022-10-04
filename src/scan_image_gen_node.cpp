@@ -209,7 +209,8 @@ std::unique_ptr<cost_map::OccupancyGrid> load_occupancy_grid_from_rostopic(
   auto sub = nh.subscribe<nav_msgs::OccupancyGrid>("/map", 1, callback);
 
   ros::Rate loop_rate(2);
-  while (ros::ok()) {
+  while (true) {
+    if (!ros::ok()) return nullptr;
     ros::spinOnce();
     if (occupancy_grid) break;
     loop_rate.sleep();
@@ -226,8 +227,12 @@ int main(int argc, char *argv[]) {
   // Load occupancy grid from rostopic, expand it.
   std::unique_ptr<cost_map::OccupancyGrid> occupancy_grid =
       std::move(load_occupancy_grid_from_rostopic());
+  if (!occupancy_grid) {
+    ROS_ERROR("Failed to load occupancy grid.");
+    return -1;
+  }
   occupancy_grid->expand(kCropMapHalfSize, kInitialCellValue);
-  ROS_INFO("grid map loaded.");
+  ROS_INFO("Grid map is loaded.");
 
   ScanFrameBufferNode frame_buffer_node(std::move(occupancy_grid), kOdomFrame,
                                         kGlobalFrame, 32, kLaserTopic);
