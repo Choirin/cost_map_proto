@@ -16,28 +16,34 @@
 
 namespace cost_map {
 
+inline float log_odds(const float raw) { return logf(raw / (1.0 - raw)); }
+
 class CostMapScan : public CostMap<float> {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  CostMapScan()
-      : sensor_model_initial_(sensor_model(0.5)),
-        sensor_model_hit_(sensor_model(0.7)),
-        sensor_model_miss_(sensor_model(0.4)),
-        sensor_model_min_(sensor_model(0.12)),
-        sensor_model_max_(sensor_model(0.97)),
+  CostMapScan(const float initial = 0.5, const float hit = 0.7,
+              const float miss = 0.4, const float min = 0.12,
+              const float max = 0.97)
+      : sensor_model_initial_(log_odds(initial)),
+        sensor_model_hit_(log_odds(hit)),
+        sensor_model_miss_(log_odds(miss)),
+        sensor_model_min_(log_odds(min)),
+        sensor_model_max_(log_odds(max)),
         scan_range_max_(INFINITY) {
     add("free", sensor_model_initial_);
     add("occupied", sensor_model_initial_);
     add("cost", sensor_model_initial_);
   }
   CostMapScan(const Eigen::Vector2d &origin, const Eigen::Array2i &size,
-              const float resolution)
+              const float resolution, const float initial = 0.5,
+              const float hit = 0.7, const float miss = 0.4,
+              const float min = 0.12, const float max = 0.97)
       : CostMap(origin, size, resolution),
-        sensor_model_initial_(sensor_model(0.5)),
-        sensor_model_hit_(sensor_model(0.7)),
-        sensor_model_miss_(sensor_model(0.4)),
-        sensor_model_min_(sensor_model(0.12)),
-        sensor_model_max_(sensor_model(0.97)),
+        sensor_model_initial_(log_odds(initial)),
+        sensor_model_hit_(log_odds(hit)),
+        sensor_model_miss_(log_odds(miss)),
+        sensor_model_min_(log_odds(min)),
+        sensor_model_max_(log_odds(max)),
         scan_range_max_(INFINITY) {
     add("free", sensor_model_initial_);
     add("occupied", sensor_model_initial_);
@@ -45,16 +51,6 @@ class CostMapScan : public CostMap<float> {
   }
   ~CostMapScan() {}
 
-  void set_sensor_model_hit(const float hit) {
-    sensor_model_hit_ = sensor_model(hit);
-  }
-  void set_sensor_model_miss(const float miss) {
-    sensor_model_miss_ = sensor_model(miss);
-  }
-  void set_sensor_model_range(const float min, const float max) {
-    sensor_model_min_ = sensor_model(min);
-    sensor_model_max_ = sensor_model(max);
-  }
   void set_scan_range_max(const float max) { scan_range_max_ = max; }
 
   void update(frame_buffer::ScanFrame &scan, const bool &expand_map = true) {
@@ -115,16 +111,15 @@ class CostMapScan : public CostMap<float> {
   }
 
  private:
-  inline float sensor_model(const float raw) { return logf(raw / (1.0 - raw)); }
   void hit(const std::string &layer, const Eigen::Array2i &index) {
-    at(layer, index) += sensor_model_hit_;
-    if (sensor_model_max_ < at(layer, index))
-      at(layer, index) = sensor_model_max_;
+    auto &cell = at(layer, index);
+    cell += sensor_model_hit_;
+    if (sensor_model_max_ < cell) cell = sensor_model_max_;
   }
   void miss(const std::string &layer, const Eigen::Array2i &index) {
-    at(layer, index) += sensor_model_miss_;
-    if (at(layer, index) < sensor_model_min_)
-      at(layer, index) = sensor_model_min_;
+    auto &cell = at(layer, index);
+    cell += sensor_model_miss_;
+    if (cell < sensor_model_min_) cell = sensor_model_min_;
   }
 
   void project(const Eigen::Matrix2Xd &points,
@@ -155,11 +150,11 @@ class CostMapScan : public CostMap<float> {
     }
   }
 
-  float sensor_model_initial_;
-  float sensor_model_hit_;
-  float sensor_model_miss_;
-  float sensor_model_min_;
-  float sensor_model_max_;
+  const float sensor_model_initial_;
+  const float sensor_model_hit_;
+  const float sensor_model_miss_;
+  const float sensor_model_min_;
+  const float sensor_model_max_;
 
   float scan_range_max_;
 };
