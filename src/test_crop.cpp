@@ -40,7 +40,8 @@ int main(int argc, char *argv[]) {
   }
 
   const size_t kScanFrameBufferSize = 32;
-  frame_buffer::ScanFrameBuffer scan_buffer(angles, kScanFrameBufferSize);
+  frame_buffer::ScanFrameBuffer scan_buffer(angles, 0.5, 30.0 * M_PI / 180.0,
+                                            kScanFrameBufferSize);
 
   const double radius = 3.0;
   const double speed = 0.05;
