@@ -47,6 +47,7 @@ set(SOURCES
   src/scan_frame.cpp
   src/occupancy_grid.cpp
   src/depth_to_scan.cpp
+  src/cost_map_scan.cpp
 )
 
 add_library(${PROJECT_NAME}
