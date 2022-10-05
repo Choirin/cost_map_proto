@@ -85,15 +85,15 @@ class CostMap {
           (corner_rt.array().max(old_corner_rt) / resolution_).ceil();
     }
     Eigen::Vector2d origin = (new_corner_lb * resolution_).matrix();
-    Eigen::Array2i size = (new_corner_rt - new_corner_lb + 0.5).cast<int>().reverse();
+    Eigen::Array2i size =
+        (new_corner_rt - new_corner_lb + 0.5).cast<int>().reverse();
     // std::cout << "origin: " << origin(0) << ", " << origin(1) << std::endl;
     // std::cout << "size: " << size(0) << ", " << size(1) << std::endl;
     resize(size, origin, value);
   }
 
   // Expand the map to contain the given point
-  void expand(const Eigen::Matrix2Xd &points,
-              const Eigen::Vector2d &reference,
+  void expand(const Eigen::Matrix2Xd &points, const Eigen::Vector2d &reference,
               const Eigen::Array<bool, Eigen::Dynamic, 1> &mask,
               const CellType value) {
     assert(points.cols() == mask.size());
@@ -143,7 +143,8 @@ class CostMap {
 
   inline void map_to_world(const Eigen::Array2i &index_m,
                            Eigen::Vector2d &position_w) const {
-    Eigen::Vector2d origin_offset = (origin_ / resolution_).array().round().matrix();
+    Eigen::Vector2d origin_offset =
+        (origin_ / resolution_).array().round().matrix();
     position_w[0] = index_m[1];
     position_w[1] = index_m[0];
     position_w = (position_w + origin_offset) * resolution_;
@@ -163,9 +164,9 @@ class CostMap {
 
   bool crop(const std::string &layer, const Eigen::Array2i &left_bottom,
             const Eigen::Array2i size, MapType &value) {
-    if (!is_inside(left_bottom) || !is_inside(left_bottom + size))
-      return false;
-    value = data_[layer]->block(left_bottom(0), left_bottom(1), size(0), size(1));
+    if (!is_inside(left_bottom) || !is_inside(left_bottom + size)) return false;
+    value =
+        data_[layer]->block(left_bottom(0), left_bottom(1), size(0), size(1));
     return true;
   }
 
