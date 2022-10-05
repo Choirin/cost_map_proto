@@ -23,11 +23,11 @@ const std::string kGlobalFrame = "map";
 const std::string kLaserTopic = "/depth/scan";
 
 const double kScanUpdateDistThresh = 0.5;
-const double kScanUpdateAngleThresh = 30.0 * M_PI / 180.0;
+const double kScanUpdateAngleThresh = 45.0 * M_PI / 180.0;
 
-void save_image(
-    const std::string &name,
-    const Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic> &mat) {
+void convert_cost_map_to_image(
+    const Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic> &mat,
+    cv::Mat &image) {
   Eigen::Array<float, Eigen::Dynamic, Eigen::Dynamic> array = mat.array();
   array = array.exp() / (1 + array.exp());
   Eigen::Matrix<uint8_t, Eigen::Dynamic, Eigen::Dynamic> data =
@@ -35,12 +35,8 @@ void save_image(
        (0.65 < array).cast<uint8_t>() * 0 +
        (0.196 <= array && array <= 0.65).cast<uint8_t>() * 200)
           .matrix();
-  cv::Mat image;
   cv::eigen2cv(data, image);
   cv::flip(image, image, 0);
-  cv::imwrite(name, image);
-  // cv::imshow(name, image);
-  // cv::waitKey(0);
 }
 
 bool crop_map_image(cost_map::CostMap<float> &cost_map,
@@ -78,18 +74,19 @@ class ScanFrameBufferNode {
     if (!get_tf(odom_frame_, sensor_frame_, msg.header.stamp, translation, yaw))
       return;
 
+    const auto range_size = msg.ranges.size();
     if (!buffer_) {
       std::shared_ptr<Eigen::VectorXd> angles =
           std::shared_ptr<Eigen::VectorXd>(new Eigen::VectorXd);
-      *angles = Eigen::VectorXd::LinSpaced(msg.ranges.size() / laserscan_skip_,
+      *angles = Eigen::VectorXd::LinSpaced(range_size / laserscan_skip_,
                                            msg.angle_min, msg.angle_max);
       buffer_ = std::make_unique<frame_buffer::ScanFrameBuffer>(
           angles, kScanUpdateDistThresh, kScanUpdateAngleThresh, frame_size_);
     }
 
-    Eigen::VectorXd ranges(msg.ranges.size() / laserscan_skip_);
-    for (size_t i = 0; i < msg.ranges.size() / laserscan_skip_; ++i)
-      ranges[i] = msg.ranges[msg.ranges.size() - i * laserscan_skip_ - 1];
+    Eigen::VectorXd ranges(range_size / laserscan_skip_);
+    for (size_t i = 0; i < range_size / laserscan_skip_; ++i)
+      ranges[i] = msg.ranges[range_size - i * laserscan_skip_ - 1];
     buffer_->update(msg.header.stamp.toSec(), ranges, translation, yaw);
   }
 
@@ -246,8 +243,11 @@ int main(int argc, char *argv[]) {
     cost_map::CostMap<float>::MapType cropped_scan, cropped_grid;
     if (frame_buffer_node.generate_cropped_images(cropped_scan, cropped_grid,
                                                   kCropMapHalfSize)) {
-      save_image("scan.png", cropped_scan);
-      save_image("grid.png", cropped_grid);
+      cv::Mat grid_image, scan_image;
+      convert_cost_map_to_image(cropped_grid, grid_image);
+      convert_cost_map_to_image(cropped_scan, scan_image);
+      cv::imwrite("grid.png", grid_image);
+      cv::imwrite("scan.png", scan_image);
     }
     loop_rate.sleep();
   }
