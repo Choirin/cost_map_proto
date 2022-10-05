@@ -1,10 +1,12 @@
-#pragma once
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
+#ifndef DEPTH_TO_SCAN_DEPTH_TO_SCAN_HPP_
+#define DEPTH_TO_SCAN_DEPTH_TO_SCAN_HPP_
 
+#include <memory>
 #include <opencv2/opencv.hpp>
 
 #include "frame_buffer/scan_frame.hpp"
+
+namespace depth_to_scan {
 
 class DepthToScan {
  public:
@@ -50,3 +52,7 @@ class DepthToScan {
 
   void initialize_coefficient();
 };
+
+}  // namespace depth_to_scan
+
+#endif  // DEPTH_TO_SCAN_DEPTH_TO_SCAN_HPP_

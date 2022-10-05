@@ -1,5 +1,7 @@
 #include "depth_to_scan/depth_to_scan.hpp"
 
+namespace depth_to_scan {
+
 DepthToScan::DepthToScan(int width, int height, double fx, double fy, double cx,
                          double cy, double factor)
     : width_(width),
@@ -17,8 +19,7 @@ DepthToScan::DepthToScan(int width, int height, double fx, double fy, double cx,
   initialize_coefficient();
 }
 
-void DepthToScan::convert(const cv::Mat &depth_image,
-                          Eigen::VectorXd &ranges) {
+void DepthToScan::convert(const cv::Mat &depth_image, Eigen::VectorXd &ranges) {
   ranges = Eigen::VectorXd::Constant(width_, INFINITY);
 
   // the image is upside down.
@@ -64,3 +65,5 @@ void DepthToScan::initialize_coefficient() {
     }
   }
 }
+
+}  // namespace depth_to_scan

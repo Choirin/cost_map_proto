@@ -1,8 +1,10 @@
-#ifndef COST_MAP_COST_MAP_SCAN_HPP
-#define COST_MAP_COST_MAP_SCAN_HPP
+#ifndef COST_MAP_COST_MAP_SCAN_HPP_
+#define COST_MAP_COST_MAP_SCAN_HPP_
+
 #include <Eigen/Geometry>
-#include <cost_map/cost_map.hpp>
-#include <frame_buffer/scan_frame.hpp>
+
+#include "cost_map/cost_map.hpp"
+#include "frame_buffer/scan_frame.hpp"
 
 namespace cost_map {
 
@@ -49,4 +51,4 @@ class CostMapScan : public CostMap<float> {
 
 }  // namespace cost_map
 
-#endif  // COST_MAP_COST_MAP_SCAN_HPP
+#endif  // COST_MAP_COST_MAP_SCAN_HPP_

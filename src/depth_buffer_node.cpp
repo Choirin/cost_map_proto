@@ -9,8 +9,6 @@
 
 #include <cmath>
 #include <iostream>
-#include <mutex>
-#include <queue>
 
 #include "cost_map/cost_map_scan.hpp"
 #include "depth_to_scan/depth_to_scan.hpp"
@@ -21,7 +19,7 @@ class DepthFrameBufferNode {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   DepthFrameBufferNode() : it_(nh_), frame_size_(32), odom_frame_("odom") {
-    depth_to_scan_ = std::make_unique<DepthToScan>(
+    depth_to_scan_ = std::make_unique<depth_to_scan::DepthToScan>(
         224, 172, 195.26491142934, 195.484689318979, 111.31867165296,
         86.8194913656314, 1000.0);
     depth_to_scan_->set_height(0.05, 0.1);
@@ -118,7 +116,7 @@ class DepthFrameBufferNode {
   tf::TransformListener tf_listener_;
   // ros::Publisher pcl_pub_;
 
-  std::unique_ptr<DepthToScan> depth_to_scan_;
+  std::unique_ptr<depth_to_scan::DepthToScan> depth_to_scan_;
 
   const size_t frame_size_;
   const std::string odom_frame_;

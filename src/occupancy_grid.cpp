@@ -1,11 +1,10 @@
-#include <cost_map/occupancy_grid.hpp>
+#include "cost_map/occupancy_grid.hpp"
 
 #include <yaml-cpp/yaml.h>
 
-#include <opencv2/imgcodecs.hpp>
-#include <opencv2/core/eigen.hpp>
-
 #include <fstream>
+#include <opencv2/core/eigen.hpp>
+#include <opencv2/imgcodecs.hpp>
 
 namespace cost_map {
 
@@ -51,8 +50,8 @@ std::unique_ptr<OccupancyGrid> LoadOccupancyGridFromFile(
                                          free_thresh, negate);
 }
 
-void SaveOccupancyGridAsFile(
-    const std::filesystem::path& map_yaml, OccupancyGrid &cost_map) {
+void SaveOccupancyGridAsFile(const std::filesystem::path& map_yaml,
+                             OccupancyGrid& cost_map) {
   const std::string image_filename = "map.pgm";
   Eigen::Vector2d origin2d;
   cost_map.get_origin(origin2d);

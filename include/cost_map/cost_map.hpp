@@ -1,5 +1,6 @@
-#ifndef COST_MAP_COST_MAP_HPP
-#define COST_MAP_COST_MAP_HPP
+#ifndef COST_MAP_COST_MAP_HPP_
+#define COST_MAP_COST_MAP_HPP_
+
 #include <Eigen/Geometry>
 #include <memory>
 
@@ -210,4 +211,4 @@ class CostMap {
 
 }  // namespace cost_map
 
-#endif  // COST_MAP_COST_MAP_HPP
+#endif  // COST_MAP_COST_MAP_HPP_
