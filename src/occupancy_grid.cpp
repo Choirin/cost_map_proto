@@ -2,6 +2,11 @@
 
 #include <yaml-cpp/yaml.h>
 
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/core/eigen.hpp>
+
+#include <fstream>
+
 namespace cost_map {
 
 std::unique_ptr<OccupancyGrid> LoadOccupancyGridFromFile(

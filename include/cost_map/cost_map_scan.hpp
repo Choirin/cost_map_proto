@@ -2,6 +2,7 @@
 #define COST_MAP_COST_MAP_SCAN_HPP
 #include <Eigen/Geometry>
 #include <cost_map/cost_map.hpp>
+#include <frame_buffer/scan_frame.hpp>
 
 namespace cost_map {
 

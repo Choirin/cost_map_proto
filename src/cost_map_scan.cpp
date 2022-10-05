@@ -1,5 +1,8 @@
 #include <cost_map/cost_map_scan.hpp>
 
+#include <opencv2/core/eigen.hpp>
+#include <opencv2/imgcodecs.hpp>
+
 namespace cost_map {
 
 CostMapScan::CostMapScan(const float initial, const float hit, const float miss,

@@ -2,6 +2,9 @@
 #include <filesystem>
 #include <iostream>
 #include <mutex>
+#include <Eigen/Core>
+#include <opencv2/core/eigen.hpp>
+#include <opencv2/opencv.hpp>
 #include <queue>
 
 #include "cost_map/cost_map_scan.hpp"

@@ -1,12 +1,14 @@
+#include <Eigen/Core>
 #include <cmath>
 #include <iostream>
 #include <mutex>
+#include <opencv2/core/eigen.hpp>
+#include <opencv2/opencv.hpp>
 #include <queue>
 
 #include "cost_map/cost_map_scan.hpp"
 #include "frame_buffer/scan_frame.hpp"
 #include "frame_buffer/scan_frame_buffer.hpp"
-
 
 int main(int argc, char *argv[]) {
   const int kScanLength = 56;
