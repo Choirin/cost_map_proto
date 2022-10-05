@@ -1,16 +1,7 @@
-#pragma once
-#ifndef __INCLUDE_COST_MAP__
-#define __INCLUDE_COST_MAP__
+#ifndef COST_MAP_COST_MAP_HPP
+#define COST_MAP_COST_MAP_HPP
 #include <Eigen/Geometry>
-#include <algorithm>
-#include <frame_buffer/scan_frame.hpp>
-#include <iostream>
-#include <iterator>
 #include <memory>
-#include <opencv2/core/eigen.hpp>
-#include <opencv2/opencv.hpp>
-#include <type_traits>
-#include <vector>
 
 namespace cost_map {
 
@@ -218,4 +209,4 @@ class CostMap {
 
 }  // namespace cost_map
 
-#endif  // __INCLUDE_COST_MAP__
+#endif  // COST_MAP_COST_MAP_HPP
