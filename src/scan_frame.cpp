@@ -1,8 +1,6 @@
 #include "frame_buffer/scan_frame.hpp"
 
-#include <algorithm>
 #include <cmath>
-#include <iterator>
 
 namespace frame_buffer {
 
@@ -48,7 +46,7 @@ void ScanFrame::transformed_scan(Eigen::Matrix2Xd &points,
         ranges_[i] * sin((*angles_)[i]);
     points.col(i) = rot_matrix * points.col(i) + translation_;
     points.col(i) = external_transform.block<2, 2>(0, 0) * points.col(i) +
-            external_transform.block<2, 1>(0, 2);
+                    external_transform.block<2, 1>(0, 2);
   }
 }
 

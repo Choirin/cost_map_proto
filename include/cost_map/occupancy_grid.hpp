@@ -1,9 +1,9 @@
-#pragma once
-#ifndef COST_MAP_OCCUPANCY_GRID_HPP
-#define COST_MAP_OCCUPANCY_GRID_HPP
+#ifndef COST_MAP_OCCUPANCY_GRID_HPP_
+#define COST_MAP_OCCUPANCY_GRID_HPP_
 
-#include <cost_map/cost_map.hpp>
 #include <filesystem>
+
+#include "cost_map/cost_map.hpp"
 
 namespace cost_map {
 
@@ -45,4 +45,4 @@ class OccupancyGrid : public CostMap<float> {
 
 }  // namespace cost_map
 
-#endif  // COST_MAP_OCCUPANCY_GRID_HPP
+#endif  // COST_MAP_OCCUPANCY_GRID_HPP_

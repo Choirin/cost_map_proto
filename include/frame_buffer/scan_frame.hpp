@@ -1,11 +1,8 @@
-#pragma once
-#ifndef __INCLUDE_SCAN_FRAME__
-#define __INCLUDE_SCAN_FRAME__
+#ifndef FRAME_BUFFER_SCAN_FRAME_HPP_
+#define FRAME_BUFFER_SCAN_FRAME_HPP_
+
 #include <Eigen/Geometry>
-#include <algorithm>
-#include <iterator>
 #include <memory>
-#include <vector>
 
 namespace frame_buffer {
 
@@ -48,4 +45,4 @@ class ScanFrame {
 
 }  // namespace frame_buffer
 
-#endif  // __INCLUDE_SCAN_FRAME__
+#endif  // FRAME_BUFFER_SCAN_FRAME_HPP_

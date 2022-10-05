@@ -1,8 +1,9 @@
+#include <Eigen/Core>
 #include <cmath>
 #include <filesystem>
 #include <iostream>
-#include <mutex>
-#include <queue>
+#include <opencv2/core/eigen.hpp>
+#include <opencv2/opencv.hpp>
 
 #include "cost_map/cost_map_scan.hpp"
 #include "cost_map/occupancy_grid.hpp"
@@ -97,8 +98,8 @@ int main(int argc, char *argv[]) {
                     cropped)) {
     show_image("cropped_scan", cropped);
   }
-  if (grid_map->crop("cost", center - kCropMapHalfSize,
-                     2 * kCropMapHalfSize, cropped)) {
+  if (grid_map->crop("cost", center - kCropMapHalfSize, 2 * kCropMapHalfSize,
+                     cropped)) {
     show_image("cropped_grid", cropped);
   }
 

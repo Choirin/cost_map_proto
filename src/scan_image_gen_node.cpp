@@ -3,9 +3,12 @@
 #include <sensor_msgs/LaserScan.h>
 #include <tf/transform_listener.h>
 
+#include <Eigen/Core>
 #include <cmath>
 #include <iostream>
 #include <mutex>
+#include <opencv2/core/eigen.hpp>
+#include <opencv2/opencv.hpp>
 #include <queue>
 
 #include "cost_map/cost_map.hpp"

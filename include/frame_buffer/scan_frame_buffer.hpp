@@ -1,5 +1,7 @@
+#ifndef FRAME_BUFFER_SCAN_FRAME_BUFFER_HPP_
+#define FRAME_BUFFER_SCAN_FRAME_BUFFER_HPP_
+
 #include <cmath>
-#include <iostream>
 #include <mutex>
 #include <queue>
 
@@ -77,3 +79,5 @@ class ScanFrameBuffer {
 };
 
 }  // namespace frame_buffer
+
+#endif  // FRAME_BUFFER_SCAN_FRAME_BUFFER_HPP_
